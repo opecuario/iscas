@@ -19,9 +19,19 @@ export default function AdminUsuarioDetalhe() {
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
-    setUsuario(adminGetUsuario(email));
-    setSims(adminListSimulacoesPorUsuario(email));
-    setCarregando(false);
+    let ativo = true;
+    Promise.all([
+      adminGetUsuario(email),
+      adminListSimulacoesPorUsuario(email),
+    ]).then(([u, s]) => {
+      if (!ativo) return;
+      setUsuario(u);
+      setSims(s);
+      setCarregando(false);
+    });
+    return () => {
+      ativo = false;
+    };
   }, [email]);
 
   if (carregando) {

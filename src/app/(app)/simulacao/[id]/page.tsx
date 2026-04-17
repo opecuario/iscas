@@ -28,9 +28,15 @@ export default function SimulacaoResumo() {
   const [naoEncontrada, setNaoEncontrada] = useState(false);
 
   useEffect(() => {
-    const s = getSimulacao(id);
-    if (!s) setNaoEncontrada(true);
-    else setSim(s);
+    let ativo = true;
+    getSimulacao(id).then((s) => {
+      if (!ativo) return;
+      if (!s) setNaoEncontrada(true);
+      else setSim(s);
+    });
+    return () => {
+      ativo = false;
+    };
   }, [id]);
 
   const saidas = useMemo(() => {
@@ -79,9 +85,9 @@ export default function SimulacaoResumo() {
   ];
   const maxAbs = Math.max(...lucros.map(Math.abs), 1);
 
-  function excluir() {
+  async function excluir() {
     if (!confirm("Tem certeza que deseja excluir esta simulação?")) return;
-    deleteSimulacao(id);
+    await deleteSimulacao(id);
     router.replace("/");
   }
 

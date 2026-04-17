@@ -11,3 +11,5 @@ tsconfig.tsbuildinfo
 .DS_Store
 .vercel
 .claude/
+
+.vercel

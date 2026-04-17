@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { criarUsuario } from "@/lib/storage";
+import { cadastrar } from "@/lib/storage";
 
 const ESTADOS = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
@@ -20,29 +20,37 @@ function mascararTelefone(v: string): string {
 
 export default function CadastroPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ nome: "", email: "", telefone: "", estado: "" });
+  const [form, setForm] = useState({
+    nome: "",
+    email: "",
+    senha: "",
+    telefone: "",
+    estado: "",
+  });
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErro(null);
 
     const nome = form.nome.trim();
     const email = form.email.trim().toLowerCase();
+    const senha = form.senha;
     const telefone = form.telefone.trim();
     const estado = form.estado;
 
     if (!nome) return setErro("Informe seu nome.");
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return setErro("E-mail inválido.");
+    if (senha.length < 6) return setErro("A senha precisa ter ao menos 6 caracteres.");
     if (telefone.replace(/\D/g, "").length < 10) return setErro("Telefone inválido.");
     if (!estado) return setErro("Selecione o estado.");
 
     setLoading(true);
-    const ok = criarUsuario({ nome, email, telefone, estado, createdAt: new Date().toISOString() });
-    if (!ok) {
+    const resultado = await cadastrar({ nome, email, senha, telefone, estado });
+    if (!resultado.ok) {
       setLoading(false);
-      setErro("Já existe um cadastro com este e-mail. Use a tela de login.");
+      setErro(resultado.erro);
       return;
     }
     router.replace("/");
@@ -58,12 +66,13 @@ export default function CadastroPage() {
         <div className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
           <h1 className="text-xl font-bold text-brand-900">Bem-vindo</h1>
           <p className="mt-1 text-sm text-neutral-600">
-            Preencha os dados abaixo para acessar o simulador de cenários de recria e engorda.
+            Crie sua conta para acessar o simulador de cenários de recria e engorda.
           </p>
 
           <form onSubmit={submit} className="mt-6 space-y-4">
             <Campo label="Nome" value={form.nome} onChange={(v) => setForm({ ...form, nome: v })} placeholder="Seu nome completo" />
             <Campo label="E-mail" type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} placeholder="voce@exemplo.com" />
+            <Campo label="Senha" type="password" value={form.senha} onChange={(v) => setForm({ ...form, senha: v })} placeholder="Mínimo 6 caracteres" />
             <Campo
               label="Telefone (WhatsApp)"
               value={form.telefone}
@@ -91,7 +100,7 @@ export default function CadastroPage() {
               disabled={loading}
               className="w-full rounded-md bg-brand-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-50"
             >
-              Acessar simulador
+              {loading ? "Criando conta…" : "Criar conta e acessar"}
             </button>
           </form>
 
@@ -101,7 +110,7 @@ export default function CadastroPage() {
               href="/login"
               className="font-semibold text-brand-800 hover:underline"
             >
-              Entrar com e-mail
+              Entrar
             </Link>
           </p>
           <p className="mt-3 text-center text-[11px] text-neutral-500">

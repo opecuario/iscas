@@ -1,8 +1,10 @@
 "use client";
 
+import { supabase } from "./supabase";
 import type { InputsBase, VarianteOverride } from "./types";
 
 export interface Usuario {
+  id: string;
   nome: string;
   email: string;
   telefone: string;
@@ -14,7 +16,7 @@ export type EtapaAtual = "realista" | "otimista" | "pessimista" | "finalizado";
 
 export interface SimulacaoSalva {
   id: string;
-  usuarioEmail: string;
+  usuarioId: string;
   nome: string;
   tipo: "recria_engorda";
   etapaAtual: EtapaAtual;
@@ -25,157 +27,196 @@ export interface SimulacaoSalva {
   updatedAt: string;
 }
 
-const KEY_USUARIOS = "simulador:usuarios";
-const KEY_SESSAO = "simulador:sessao";
-const KEY_SIMULACOES = "simulador:simulacoes";
-const KEY_USUARIO_LEGADO = "simulador:usuario";
-
 export const LIMITE_SIMULACOES = 2;
 
-function normalizarEmail(email: string): string {
-  return email.trim().toLowerCase();
+type UsuarioRow = {
+  id: string;
+  email: string;
+  nome: string;
+  telefone: string | null;
+  estado: string | null;
+  created_at: string;
+};
+
+type SimulacaoRow = {
+  id: string;
+  usuario_id: string;
+  nome: string;
+  tipo: string;
+  etapa_atual: string;
+  inputs: InputsBase;
+  otimista: VarianteOverride | null;
+  pessimista: VarianteOverride | null;
+  created_at: string;
+  updated_at: string;
+};
+
+function mapUsuario(row: UsuarioRow): Usuario {
+  return {
+    id: row.id,
+    email: row.email,
+    nome: row.nome,
+    telefone: row.telefone ?? "",
+    estado: row.estado ?? "",
+    createdAt: row.created_at,
+  };
 }
 
-// Migração ---------------------------------------------------------------
-function migrarSeNecessario() {
-  if (typeof window === "undefined") return;
-  const legado = window.localStorage.getItem(KEY_USUARIO_LEGADO);
-  if (!legado) return;
-  try {
-    const u = JSON.parse(legado) as Usuario;
-    const emailNorm = normalizarEmail(u.email);
-    const lista = lerUsuariosCru();
-    if (!lista.find((x) => normalizarEmail(x.email) === emailNorm)) {
-      lista.push({ ...u, email: emailNorm });
-      window.localStorage.setItem(KEY_USUARIOS, JSON.stringify(lista));
+function mapSimulacao(row: SimulacaoRow): SimulacaoSalva {
+  return {
+    id: row.id,
+    usuarioId: row.usuario_id,
+    nome: row.nome,
+    tipo: "recria_engorda",
+    etapaAtual: row.etapa_atual as EtapaAtual,
+    inputs: row.inputs,
+    otimista: row.otimista,
+    pessimista: row.pessimista,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+// ---------- Autenticação --------------------------------------
+
+export type AuthResultado = { ok: true } | { ok: false; erro: string };
+
+export async function cadastrar(params: {
+  nome: string;
+  email: string;
+  senha: string;
+  telefone: string;
+  estado: string;
+}): Promise<AuthResultado> {
+  const email = params.email.trim().toLowerCase();
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password: params.senha,
+    options: { data: { nome: params.nome } },
+  });
+  if (error) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes("already") || msg.includes("registered")) {
+      return { ok: false, erro: "Já existe cadastro com este e-mail. Entre pelo login." };
     }
-    window.localStorage.setItem(KEY_SESSAO, emailNorm);
-
-    // Atribui simulações órfãs ao usuário recém-migrado
-    const simsRaw = window.localStorage.getItem(KEY_SIMULACOES);
-    if (simsRaw) {
-      const sims = JSON.parse(simsRaw) as SimulacaoSalva[];
-      const corrigidas = sims.map((s) => ({
-        ...s,
-        usuarioEmail: s.usuarioEmail ?? emailNorm,
-      }));
-      window.localStorage.setItem(KEY_SIMULACOES, JSON.stringify(corrigidas));
-    }
-  } catch {
-    // ignora payload inválido
+    return { ok: false, erro: error.message };
   }
-  window.localStorage.removeItem(KEY_USUARIO_LEGADO);
+  if (!data.user) return { ok: false, erro: "Não foi possível concluir o cadastro." };
+
+  const { error: insertErr } = await supabase.from("usuarios").insert({
+    id: data.user.id,
+    email,
+    nome: params.nome.trim(),
+    telefone: params.telefone.trim() || null,
+    estado: params.estado || null,
+  });
+  if (insertErr) return { ok: false, erro: insertErr.message };
+
+  return { ok: true };
 }
 
-function lerUsuariosCru(): Usuario[] {
-  const raw = window.localStorage.getItem(KEY_USUARIOS);
-  if (!raw) return [];
-  try {
-    return JSON.parse(raw) as Usuario[];
-  } catch {
-    return [];
-  }
+export async function entrar(email: string, senha: string): Promise<AuthResultado> {
+  const { error } = await supabase.auth.signInWithPassword({
+    email: email.trim().toLowerCase(),
+    password: senha,
+  });
+  if (error) return { ok: false, erro: "E-mail ou senha incorretos." };
+  return { ok: true };
 }
 
-// Sessão ----------------------------------------------------------------
-export function getEmailSessao(): string | null {
-  if (typeof window === "undefined") return null;
-  migrarSeNecessario();
-  return window.localStorage.getItem(KEY_SESSAO);
+export async function sair(): Promise<void> {
+  await supabase.auth.signOut();
 }
 
-export function setSessao(email: string) {
-  window.localStorage.setItem(KEY_SESSAO, normalizarEmail(email));
+// ---------- Usuário atual -------------------------------------
+
+export async function getUsuario(): Promise<Usuario | null> {
+  const { data: sess } = await supabase.auth.getSession();
+  const uid = sess.session?.user.id;
+  if (!uid) return null;
+  const { data, error } = await supabase
+    .from("usuarios")
+    .select("*")
+    .eq("id", uid)
+    .maybeSingle();
+  if (error || !data) return null;
+  return mapUsuario(data as UsuarioRow);
 }
 
-export function limparSessao() {
-  window.localStorage.removeItem(KEY_SESSAO);
+// ---------- Usuários (admin via RLS) --------------------------
+
+export async function listUsuarios(): Promise<Usuario[]> {
+  const { data, error } = await supabase
+    .from("usuarios")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error || !data) return [];
+  return data.map((r) => mapUsuario(r as UsuarioRow));
 }
 
-// Usuários --------------------------------------------------------------
-export function listUsuarios(): Usuario[] {
-  if (typeof window === "undefined") return [];
-  migrarSeNecessario();
-  return lerUsuariosCru();
+export async function getUsuarioPorEmail(email: string): Promise<Usuario | null> {
+  const norm = email.trim().toLowerCase();
+  const { data, error } = await supabase
+    .from("usuarios")
+    .select("*")
+    .eq("email", norm)
+    .maybeSingle();
+  if (error || !data) return null;
+  return mapUsuario(data as UsuarioRow);
 }
 
-export function getUsuarioPorEmail(email: string): Usuario | null {
-  const norm = normalizarEmail(email);
-  return listUsuarios().find((u) => normalizarEmail(u.email) === norm) ?? null;
+// ---------- Simulações ----------------------------------------
+
+export async function listSimulacoes(): Promise<SimulacaoSalva[]> {
+  const { data, error } = await supabase
+    .from("simulacoes")
+    .select("*")
+    .order("updated_at", { ascending: false });
+  if (error || !data) return [];
+  return data.map((r) => mapSimulacao(r as SimulacaoRow));
 }
 
-/** Usuário atualmente logado neste navegador. */
-export function getUsuario(): Usuario | null {
-  const email = getEmailSessao();
-  if (!email) return null;
-  return getUsuarioPorEmail(email);
+export async function listSimulacoesDoUsuarioLogado(): Promise<SimulacaoSalva[]> {
+  const { data: sess } = await supabase.auth.getSession();
+  const uid = sess.session?.user.id;
+  if (!uid) return [];
+  const { data, error } = await supabase
+    .from("simulacoes")
+    .select("*")
+    .eq("usuario_id", uid)
+    .order("updated_at", { ascending: false });
+  if (error || !data) return [];
+  return data.map((r) => mapSimulacao(r as SimulacaoRow));
 }
 
-/**
- * Cria um novo usuário e o coloca em sessão.
- * Retorna `false` se já existir cadastro com esse e-mail.
- */
-export function criarUsuario(u: Usuario): boolean {
-  const norm = normalizarEmail(u.email);
-  const lista = listUsuarios();
-  if (lista.find((x) => normalizarEmail(x.email) === norm)) return false;
-  lista.push({ ...u, email: norm });
-  window.localStorage.setItem(KEY_USUARIOS, JSON.stringify(lista));
-  setSessao(norm);
-  return true;
+export async function getSimulacao(id: string): Promise<SimulacaoSalva | null> {
+  const { data, error } = await supabase
+    .from("simulacoes")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !data) return null;
+  return mapSimulacao(data as SimulacaoRow);
 }
 
-/** Faz login com um e-mail já cadastrado. Retorna o usuário ou `null`. */
-export function loginPorEmail(email: string): Usuario | null {
-  const u = getUsuarioPorEmail(email);
-  if (!u) return null;
-  setSessao(u.email);
-  return u;
+export async function upsertSimulacao(s: SimulacaoSalva): Promise<AuthResultado> {
+  const row = {
+    id: s.id,
+    usuario_id: s.usuarioId,
+    nome: s.nome,
+    tipo: s.tipo,
+    etapa_atual: s.etapaAtual,
+    inputs: s.inputs,
+    otimista: s.otimista,
+    pessimista: s.pessimista,
+  };
+  const { error } = await supabase.from("simulacoes").upsert(row);
+  if (error) return { ok: false, erro: error.message };
+  return { ok: true };
 }
 
-// Simulações ------------------------------------------------------------
-function lerSimsCru(): SimulacaoSalva[] {
-  if (typeof window === "undefined") return [];
-  const raw = window.localStorage.getItem(KEY_SIMULACOES);
-  if (!raw) return [];
-  try {
-    return JSON.parse(raw) as SimulacaoSalva[];
-  } catch {
-    return [];
-  }
-}
-
-/** Lista as simulações do usuário atualmente logado. */
-export function listSimulacoes(): SimulacaoSalva[] {
-  const email = getEmailSessao();
-  if (!email) return [];
-  return lerSimsCru().filter(
-    (s) => normalizarEmail(s.usuarioEmail ?? "") === normalizarEmail(email)
-  );
-}
-
-/** Para uso do painel admin — todas as simulações do navegador. */
-export function listTodasSimulacoes(): SimulacaoSalva[] {
-  if (typeof window === "undefined") return [];
-  migrarSeNecessario();
-  return lerSimsCru();
-}
-
-export function getSimulacao(id: string): SimulacaoSalva | null {
-  return lerSimsCru().find((s) => s.id === id) ?? null;
-}
-
-export function upsertSimulacao(s: SimulacaoSalva) {
-  const list = lerSimsCru();
-  const idx = list.findIndex((x) => x.id === s.id);
-  if (idx === -1) list.push(s);
-  else list[idx] = s;
-  window.localStorage.setItem(KEY_SIMULACOES, JSON.stringify(list));
-}
-
-export function deleteSimulacao(id: string) {
-  const list = lerSimsCru().filter((s) => s.id !== id);
-  window.localStorage.setItem(KEY_SIMULACOES, JSON.stringify(list));
+export async function deleteSimulacao(id: string): Promise<void> {
+  await supabase.from("simulacoes").delete().eq("id", id);
 }
 
 export function gerarId(): string {

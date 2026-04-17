@@ -10,15 +10,23 @@ import {
 import { calcular } from "@/lib/calculations";
 import { fmtBRL } from "@/lib/format";
 import type { Usuario } from "@/lib/storage";
-import AvisoModoLocal from "@/components/AvisoModoLocal";
 
 export default function AdminOverview() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [simulacoes, setSimulacoes] = useState<SimulacaoComDono[]>([]);
 
   useEffect(() => {
-    setUsuarios(adminListUsuarios());
-    setSimulacoes(adminListSimulacoes());
+    let ativo = true;
+    Promise.all([adminListUsuarios(), adminListSimulacoes()]).then(
+      ([us, sims]) => {
+        if (!ativo) return;
+        setUsuarios(us);
+        setSimulacoes(sims);
+      }
+    );
+    return () => {
+      ativo = false;
+    };
   }, []);
 
   const finalizadas = simulacoes.filter((s) => s.etapaAtual === "finalizado");
@@ -35,8 +43,6 @@ export default function AdminOverview() {
           Resumo dos usuários e simulações na plataforma.
         </p>
       </header>
-
-      <AvisoModoLocal />
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi titulo="Usuários cadastrados" valor={String(usuarios.length)} />

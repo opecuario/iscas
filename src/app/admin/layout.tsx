@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useUsuario } from "@/components/UsuarioProvider";
 import { isAdmin } from "@/lib/admin";
-import { limparSessao } from "@/lib/storage";
+import { sair } from "@/lib/storage";
 
 const NAV = [
   { href: "/admin", label: "Visão geral" },
@@ -68,8 +68,8 @@ export default function AdminLayout({
               ← Voltar para o app
             </Link>
             <button
-              onClick={() => {
-                limparSessao();
+              onClick={async () => {
+                await sair();
                 router.replace("/login");
               }}
               className="rounded-md border border-white/30 bg-transparent px-3 py-1.5 text-xs font-semibold text-white/90 hover:bg-white/10"

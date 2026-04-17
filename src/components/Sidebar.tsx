@@ -6,8 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LIMITE_SIMULACOES,
-  limparSessao,
-  listSimulacoes,
+  listSimulacoesDoUsuarioLogado,
+  sair,
   type SimulacaoSalva,
 } from "@/lib/storage";
 import { useUsuario } from "./UsuarioProvider";
@@ -27,14 +27,19 @@ export default function Sidebar() {
   const [simulacoes, setSimulacoes] = useState<SimulacaoSalva[]>([]);
 
   useEffect(() => {
-    setSimulacoes(listSimulacoes());
+    let ativo = true;
+    listSimulacoesDoUsuarioLogado().then((sims) => {
+      if (ativo) setSimulacoes(sims);
+    });
+    return () => {
+      ativo = false;
+    };
   }, [pathname]);
 
   const cheio = simulacoes.length >= LIMITE_SIMULACOES;
 
-  function logout() {
-    if (typeof window === "undefined") return;
-    limparSessao();
+  async function logout() {
+    await sair();
     router.replace("/login");
   }
 

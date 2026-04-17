@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import AvisoModoLocal from "@/components/AvisoModoLocal";
 import { calcular } from "@/lib/calculations";
 import { fmtBRL, fmtPct } from "@/lib/format";
 import {
@@ -18,7 +17,13 @@ export default function AdminSimulacoes() {
   const [busca, setBusca] = useState("");
 
   useEffect(() => {
-    setSims(adminListSimulacoes());
+    let ativo = true;
+    adminListSimulacoes().then((s) => {
+      if (ativo) setSims(s);
+    });
+    return () => {
+      ativo = false;
+    };
   }, []);
 
   const filtradas = useMemo(() => {
@@ -56,8 +61,6 @@ export default function AdminSimulacoes() {
           className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 sm:w-80"
         />
       </header>
-
-      <AvisoModoLocal />
 
       <div className="mt-4 flex gap-2">
         {(

@@ -2,21 +2,30 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import AvisoModoLocal from "@/components/AvisoModoLocal";
 import {
   adminListSimulacoes,
   adminListUsuarios,
+  type SimulacaoComDono,
 } from "@/lib/admin";
-import type { SimulacaoSalva, Usuario } from "@/lib/storage";
+import type { Usuario } from "@/lib/storage";
 
 export default function AdminUsuarios() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [sims, setSims] = useState<SimulacaoSalva[]>([]);
+  const [sims, setSims] = useState<SimulacaoComDono[]>([]);
   const [busca, setBusca] = useState("");
 
   useEffect(() => {
-    setUsuarios(adminListUsuarios());
-    setSims(adminListSimulacoes());
+    let ativo = true;
+    Promise.all([adminListUsuarios(), adminListSimulacoes()]).then(
+      ([us, s]) => {
+        if (!ativo) return;
+        setUsuarios(us);
+        setSims(s);
+      }
+    );
+    return () => {
+      ativo = false;
+    };
   }, []);
 
   const filtrados = useMemo(() => {
@@ -35,7 +44,7 @@ export default function AdminUsuarios() {
     for (const u of usuarios) {
       const norm = u.email.toLowerCase();
       const count = sims.filter(
-        (s) => (s.usuarioEmail ?? "").toLowerCase() === norm
+        (s) => s.donoEmail.toLowerCase() === norm
       ).length;
       m.set(u.email, count);
     }
@@ -59,8 +68,6 @@ export default function AdminUsuarios() {
           className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 sm:w-80"
         />
       </header>
-
-      <AvisoModoLocal />
 
       <div className="mt-6 overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm">
         <div className="overflow-x-auto">

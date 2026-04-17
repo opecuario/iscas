@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import {
   LIMITE_SIMULACOES,
   deleteSimulacao,
-  listSimulacoes,
+  listSimulacoesDoUsuarioLogado,
   type SimulacaoSalva,
 } from "@/lib/storage";
 import { calcular } from "@/lib/calculations";
@@ -24,13 +24,20 @@ export default function Dashboard() {
   const [simulacoes, setSimulacoes] = useState<SimulacaoSalva[]>([]);
 
   useEffect(() => {
-    setSimulacoes(listSimulacoes());
+    let ativo = true;
+    listSimulacoesDoUsuarioLogado().then((sims) => {
+      if (ativo) setSimulacoes(sims);
+    });
+    return () => {
+      ativo = false;
+    };
   }, []);
 
-  function excluir(id: string) {
+  async function excluir(id: string) {
     if (!confirm("Tem certeza que deseja excluir esta simulação?")) return;
-    deleteSimulacao(id);
-    setSimulacoes(listSimulacoes());
+    await deleteSimulacao(id);
+    const sims = await listSimulacoesDoUsuarioLogado();
+    setSimulacoes(sims);
   }
 
   const cheio = simulacoes.length >= LIMITE_SIMULACOES;

@@ -10,7 +10,7 @@ import {
   gerarId,
   getSimulacao,
   getUsuario,
-  listSimulacoes,
+  listSimulacoesDoUsuarioLogado,
   upsertSimulacao,
   type EtapaAtual,
   type SimulacaoSalva,
@@ -62,26 +62,34 @@ function NovaPage() {
 
   // Carrega ou inicializa
   useEffect(() => {
-    if (idParam) {
-      const s = getSimulacao(idParam);
-      if (s) {
-        setId(s.id);
-        setNome(s.nome);
-        setBase(s.inputs);
-        setOtimista(s.otimista);
-        setPessimista(s.pessimista);
-        const etapa: TipoVariante =
-          etapaParam && ORDEM.includes(etapaParam)
-            ? etapaParam
-            : s.etapaAtual === "finalizado"
-            ? "pessimista"
-            : (s.etapaAtual as TipoVariante);
-        setVariante(etapa);
-      } else {
-        router.replace("/nova");
+    let ativo = true;
+    async function carregar() {
+      if (idParam) {
+        const s = await getSimulacao(idParam);
+        if (!ativo) return;
+        if (s) {
+          setId(s.id);
+          setNome(s.nome);
+          setBase(s.inputs);
+          setOtimista(s.otimista);
+          setPessimista(s.pessimista);
+          const etapa: TipoVariante =
+            etapaParam && ORDEM.includes(etapaParam)
+              ? etapaParam
+              : s.etapaAtual === "finalizado"
+              ? "pessimista"
+              : (s.etapaAtual as TipoVariante);
+          setVariante(etapa);
+        } else {
+          router.replace("/nova");
+        }
       }
+      if (ativo) setCarregando(false);
     }
-    setCarregando(false);
+    carregar();
+    return () => {
+      ativo = false;
+    };
   }, [idParam, etapaParam, router]);
 
   // Ao entrar no otimista/pessimista pela 1ª vez, inicializa com snapshot do realista.
@@ -114,20 +122,20 @@ function NovaPage() {
     if (variante === "pessimista") setPessimista(snapshotDoBase(base));
   }
 
-  function salvar(finalizar: boolean) {
+  async function salvar(finalizar: boolean) {
     setErro(null);
     const nomeTrim = nome.trim();
     if (!nomeTrim) {
       setErro("Dê um nome para a simulação antes de salvar.");
       return;
     }
-    const usuarioAtual = getUsuario();
+    const usuarioAtual = await getUsuario();
     if (!usuarioAtual) {
       setErro("Sessão expirada. Faça login novamente.");
       return;
     }
     if (!id) {
-      const outras = listSimulacoes();
+      const outras = await listSimulacoesDoUsuarioLogado();
       if (outras.length >= LIMITE_SIMULACOES) {
         setErro(
           `Limite de ${LIMITE_SIMULACOES} simulações atingido. Exclua uma antes de criar outra.`
@@ -139,11 +147,11 @@ function NovaPage() {
     const agora = new Date().toISOString();
     const etapaNova: EtapaAtual = finalizar ? "finalizado" : proximaEtapa(variante);
     const novoId = id ?? gerarId();
-    const anterior = id ? getSimulacao(id) : null;
+    const anterior = id ? await getSimulacao(id) : null;
 
     const salva: SimulacaoSalva = {
       id: novoId,
-      usuarioEmail: anterior?.usuarioEmail ?? usuarioAtual.email,
+      usuarioId: anterior?.usuarioId ?? usuarioAtual.id,
       nome: nomeTrim,
       tipo: "recria_engorda",
       etapaAtual: etapaNova,
@@ -162,7 +170,11 @@ function NovaPage() {
       updatedAt: agora,
     };
 
-    upsertSimulacao(salva);
+    const res = await upsertSimulacao(salva);
+    if (!res.ok) {
+      setErro(res.erro);
+      return;
+    }
     setId(novoId);
 
     if (etapaNova === "finalizado") {
