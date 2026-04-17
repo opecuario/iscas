@@ -1,0 +1,13 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+.env*.local
+*.log
+_planilha_dump.txt
+*.xlsx
+tsconfig.tsbuildinfo
+.DS_Store
+.vercel
+.claude/
