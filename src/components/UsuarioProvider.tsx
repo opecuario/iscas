@@ -12,7 +12,18 @@ export function useUsuario(): Usuario | null {
   return useContext(UsuarioCtx);
 }
 
-const ROTAS_PUBLICAS = ["/login", "/cadastro"];
+// Acessíveis sem login (não redireciona para /login).
+const ROTAS_PUBLICAS = [
+  "/login",
+  "/cadastro",
+  "/esqueci-senha",
+  "/redefinir-senha",
+  "/privacidade",
+];
+
+// Rotas que, se o usuário já estiver logado, redirecionam para o dashboard.
+// /redefinir-senha e /privacidade NÃO entram aqui — são neutras.
+const ROTAS_DE_ENTRADA = ["/login", "/cadastro", "/esqueci-senha"];
 
 export default function UsuarioProvider({
   children,
@@ -56,8 +67,9 @@ export default function UsuarioProvider({
   useEffect(() => {
     if (!carregado) return;
     const ehPublica = ROTAS_PUBLICAS.includes(pathname);
+    const ehEntrada = ROTAS_DE_ENTRADA.includes(pathname);
     if (!usuario && !ehPublica) router.replace("/login");
-    if (usuario && ehPublica) router.replace("/");
+    if (usuario && ehEntrada) router.replace("/");
   }, [carregado, usuario, pathname, router]);
 
   if (!carregado) {
