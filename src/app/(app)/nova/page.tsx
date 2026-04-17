@@ -29,6 +29,19 @@ function snapshotDoBase(base: InputsBase): VarianteOverride {
   };
 }
 
+/** Se o override não diferir do base em nenhum dos 3 campos, não tem cenário de fato. */
+function normalizarVariante(
+  base: InputsBase,
+  override: VarianteOverride | null
+): VarianteOverride | null {
+  if (!override) return null;
+  const igual =
+    override.gmd === base.gmd &&
+    override.precoCompraArroba === base.precoCompraArroba &&
+    override.precoVendaArroba === base.precoVendaArroba;
+  return igual ? null : override;
+}
+
 const ORDEM: TipoVariante[] = ["realista", "otimista", "pessimista"];
 
 function proximaEtapa(v: TipoVariante): EtapaAtual {
@@ -156,16 +169,20 @@ function NovaPage() {
       tipo: "recria_engorda",
       etapaAtual: etapaNova,
       inputs: base,
-      otimista:
+      otimista: normalizarVariante(
+        base,
         variante === "realista"
           ? anterior?.otimista ?? null
           : variante === "otimista"
           ? otimista
-          : anterior?.otimista ?? otimista,
-      pessimista:
+          : anterior?.otimista ?? otimista
+      ),
+      pessimista: normalizarVariante(
+        base,
         variante === "pessimista"
           ? pessimista
-          : anterior?.pessimista ?? pessimista,
+          : anterior?.pessimista ?? pessimista
+      ),
       createdAt: anterior?.createdAt ?? agora,
       updatedAt: agora,
     };

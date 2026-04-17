@@ -104,7 +104,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <main className="min-w-0">{children}</main>
+      <main className="min-w-0">
+        {children}
+        <footer className="mt-10 border-t border-neutral-200 px-4 py-4 text-center text-[11px] text-neutral-500">
+          <a
+            href="/privacidade"
+            className="hover:text-brand-800 hover:underline"
+          >
+            Política de Privacidade e Termos de Uso
+          </a>
+        </footer>
+      </main>
     </div>
   );
 }

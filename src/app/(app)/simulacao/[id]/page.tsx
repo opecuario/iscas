@@ -278,14 +278,14 @@ export default function SimulacaoResumo() {
 
       <footer className="mt-10 rounded-lg border border-brand-200 bg-brand-50 p-5 text-center">
         <h3 className="text-base font-semibold text-brand-900">
-          Quer aprofundar a análise desta operação?
+          Quer melhorar os resultados desta operação?
         </h3>
         <p className="mt-1 text-sm text-brand-900/80">
-          Nossa consultoria ajuda você a transformar estes cenários em plano de
-          ação.
+          Nossa consultoria ajuda você a transformar esses cenários em decisões
+          concretas de manejo, nutrição e compra/venda para elevar o retorno.
         </p>
         <a
-          href="https://wa.me/5511999999999"
+          href="https://wa.me/556699852419"
           target="_blank"
           rel="noopener noreferrer"
           className="mt-4 inline-block rounded-md bg-brand-800 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700"

@@ -128,6 +128,23 @@ export async function sair(): Promise<void> {
   await supabase.auth.signOut();
 }
 
+export async function enviarRecuperacaoSenha(email: string): Promise<AuthResultado> {
+  const norm = email.trim().toLowerCase();
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "";
+  const { error } = await supabase.auth.resetPasswordForEmail(norm, {
+    redirectTo: `${origin}/redefinir-senha`,
+  });
+  if (error) return { ok: false, erro: error.message };
+  return { ok: true };
+}
+
+export async function atualizarSenha(novaSenha: string): Promise<AuthResultado> {
+  const { error } = await supabase.auth.updateUser({ password: novaSenha });
+  if (error) return { ok: false, erro: error.message };
+  return { ok: true };
+}
+
 // ---------- Usuário atual -------------------------------------
 
 export async function getUsuario(): Promise<Usuario | null> {

@@ -114,7 +114,15 @@ export default function CadastroPage() {
             </Link>
           </p>
           <p className="mt-3 text-center text-[11px] text-neutral-500">
-            Seus dados são usados para entrar em contato sobre consultoria e treinamentos.
+            Ao criar sua conta, você concorda com nossa{" "}
+            <Link
+              href="/privacidade"
+              target="_blank"
+              className="font-semibold text-brand-800 hover:underline"
+            >
+              Política de Privacidade e Termos de Uso
+            </Link>
+            .
           </p>
         </div>
       </div>

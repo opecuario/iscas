@@ -106,6 +106,14 @@ export default function LoginPage() {
               Faça seu cadastro
             </Link>
           </p>
+          <p className="mt-2 text-center text-xs text-neutral-500">
+            <Link
+              href="/esqueci-senha"
+              className="hover:text-brand-800 hover:underline"
+            >
+              Esqueci minha senha
+            </Link>
+          </p>
         </div>
       </div>
     </div>
