@@ -20,29 +20,21 @@ export default function RedefinirSenhaPage() {
     let ativo = true;
     let prontoLocal = false;
 
-    console.log("[reset] URL completa:", window.location.href);
-    console.log("[reset] hash:", window.location.hash);
-    console.log("[reset] search:", window.location.search);
-
     function marcarPronto() {
       if (!ativo || prontoLocal) return;
       prontoLocal = true;
-      console.log("[reset] sessão detectada — liberando formulário");
       setPronto(true);
     }
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("[reset] auth event:", event, "sessão?", !!session);
       if (event === "PASSWORD_RECOVERY" || session) marcarPronto();
     });
-    supabase.auth.getSession().then(({ data, error }) => {
-      console.log("[reset] getSession:", { session: !!data.session, error });
+    supabase.auth.getSession().then(({ data }) => {
       if (data.session) marcarPronto();
     });
 
     const timeout = setTimeout(() => {
       if (!ativo || prontoLocal) return;
-      console.warn("[reset] timeout — nenhuma sessão apareceu em 3.5s");
       setErro(
         "Link inválido ou expirado. Solicite um novo link de recuperação."
       );

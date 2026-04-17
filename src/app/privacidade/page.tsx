@@ -20,7 +20,7 @@ export default function PrivacidadePage() {
       <section className="mt-8 space-y-2">
         <h2 className="text-lg font-semibold text-brand-900">1. Quem somos</h2>
         <p>
-          Este simulador é oferecido pela <strong>OpeCuário</strong>, consultoria
+          Este simulador é oferecido pela <strong>O Pecuário</strong>, consultoria
           especializada em pecuária de recria e engorda. Ao usar a ferramenta,
           você concorda com esta política.
         </p>
@@ -117,7 +117,7 @@ export default function PrivacidadePage() {
           responsabilidade do usuário.
         </p>
         <p>
-          A OpeCuário se reserva o direito de ajustar funcionalidades, limites
+          A O Pecuário se reserva o direito de ajustar funcionalidades, limites
           de uso e esta política a qualquer momento, notificando os usuários
           quando cabível.
         </p>
