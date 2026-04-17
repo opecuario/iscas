@@ -168,7 +168,7 @@ export const INPUTS_PADRAO: InputsBase = {
   gmd: 0,
   periodoDias: 0,
   mortalidadePct: 0,
-  rendimentoCarcacaPct: 0,
+  rendimentoCarcacaPct: 0.5,
   consumoSuplementoPctPV: 0,
   precoSuplementoKg: 0,
   salariosMensal: 0,
