@@ -18,18 +18,32 @@ export default function RedefinirSenhaPage() {
 
   useEffect(() => {
     let ativo = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!ativo) return;
-      if (!data.session) {
-        setErro(
-          "Link inválido ou expirado. Solicite um novo link de recuperação."
-        );
-      } else {
-        setPronto(true);
-      }
+    let prontoLocal = false;
+
+    function marcarPronto() {
+      if (!ativo || prontoLocal) return;
+      prontoLocal = true;
+      setPronto(true);
+    }
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || session) marcarPronto();
     });
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) marcarPronto();
+    });
+
+    const timeout = setTimeout(() => {
+      if (!ativo || prontoLocal) return;
+      setErro(
+        "Link inválido ou expirado. Solicite um novo link de recuperação."
+      );
+    }, 3500);
+
     return () => {
       ativo = false;
+      sub.subscription.unsubscribe();
+      clearTimeout(timeout);
     };
   }, []);
 
