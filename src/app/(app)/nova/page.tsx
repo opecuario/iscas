@@ -147,7 +147,7 @@ function NovaPage() {
       setErro("Sessão expirada. Faça login novamente.");
       return;
     }
-    if (!id) {
+    if (!id && !usuarioAtual.simulacoesIlimitadas) {
       const outras = await listSimulacoesDoUsuarioLogado();
       if (outras.length >= LIMITE_SIMULACOES) {
         setErro(

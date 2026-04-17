@@ -56,7 +56,8 @@ export default function Dashboard() {
     setSimulacoes(sims);
   }
 
-  const cheio = simulacoes.length >= LIMITE_SIMULACOES;
+  const ilimitadas = usuario?.simulacoesIlimitadas ?? false;
+  const cheio = !ilimitadas && simulacoes.length >= LIMITE_SIMULACOES;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
@@ -65,14 +66,18 @@ export default function Dashboard() {
           Olá{usuario ? `, ${usuario.nome.split(" ")[0]}` : ""}.
         </h1>
         <p className="mt-1 text-sm text-neutral-600">
-          Gerencie suas simulações de recria e engorda. Você pode manter até{" "}
-          {LIMITE_SIMULACOES} simulações salvas.
+          Gerencie suas simulações de recria e engorda.
+          {ilimitadas
+            ? " Seu acesso está liberado — crie quantas simulações quiser."
+            : ` Você pode manter até ${LIMITE_SIMULACOES} simulações salvas.`}
         </p>
       </header>
 
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
-          Minhas simulações ({simulacoes.length}/{LIMITE_SIMULACOES})
+          {ilimitadas
+            ? `Minhas simulações (${simulacoes.length})`
+            : `Minhas simulações (${simulacoes.length}/${LIMITE_SIMULACOES})`}
         </h2>
         {!cheio && (
           <Link

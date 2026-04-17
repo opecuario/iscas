@@ -8,6 +8,7 @@ import { fmtBRL, fmtPct } from "@/lib/format";
 import {
   adminGetUsuario,
   adminListSimulacoesPorUsuario,
+  adminSetSimulacoesIlimitadas,
 } from "@/lib/admin";
 import type { SimulacaoSalva, Usuario } from "@/lib/storage";
 
@@ -17,6 +18,20 @@ export default function AdminUsuarioDetalhe() {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [sims, setSims] = useState<SimulacaoSalva[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [salvandoLimite, setSalvandoLimite] = useState(false);
+
+  async function alternarIlimitadas() {
+    if (!usuario) return;
+    const novoValor = !usuario.simulacoesIlimitadas;
+    setSalvandoLimite(true);
+    const res = await adminSetSimulacoesIlimitadas(usuario.id, novoValor);
+    setSalvandoLimite(false);
+    if (!res.ok) {
+      alert(`Erro ao atualizar: ${res.erro}`);
+      return;
+    }
+    setUsuario({ ...usuario, simulacoesIlimitadas: novoValor });
+  }
 
   useEffect(() => {
     let ativo = true;
@@ -72,6 +87,35 @@ export default function AdminUsuarioDetalhe() {
         <CampoInfo titulo="E-mail" valor={usuario.email} />
         <CampoInfo titulo="Telefone" valor={usuario.telefone} />
         <CampoInfo titulo="Estado" valor={usuario.estado} />
+      </section>
+
+      <section className="mt-4 flex flex-col gap-3 rounded-lg border border-brand-200 bg-brand-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-brand-800">
+            Limite de simulações
+          </div>
+          <p className="mt-1 text-sm text-brand-900">
+            {usuario.simulacoesIlimitadas
+              ? "Liberado — usuário pode criar simulações ilimitadas."
+              : "Padrão — sujeito ao limite gratuito."}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={alternarIlimitadas}
+          disabled={salvandoLimite}
+          className={`rounded-md px-4 py-2 text-sm font-semibold shadow-sm transition disabled:opacity-50 ${
+            usuario.simulacoesIlimitadas
+              ? "border border-red-200 bg-white text-red-700 hover:bg-red-50"
+              : "bg-brand-800 text-white hover:bg-brand-700"
+          }`}
+        >
+          {salvandoLimite
+            ? "Salvando…"
+            : usuario.simulacoesIlimitadas
+            ? "Voltar ao limite padrão"
+            : "Liberar simulações ilimitadas"}
+        </button>
       </section>
 
       <section className="mt-8 rounded-lg border border-neutral-200 bg-white shadow-sm">

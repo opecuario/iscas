@@ -73,3 +73,15 @@ export async function adminListSimulacoesPorUsuario(
   const todas = await listSimulacoes();
   return todas.filter((s) => s.usuarioId === u.id);
 }
+
+export async function adminSetSimulacoesIlimitadas(
+  usuarioId: string,
+  ilimitadas: boolean
+): Promise<{ ok: true } | { ok: false; erro: string }> {
+  const { error } = await supabase
+    .from("usuarios")
+    .update({ simulacoes_ilimitadas: ilimitadas })
+    .eq("id", usuarioId);
+  if (error) return { ok: false, erro: error.message };
+  return { ok: true };
+}

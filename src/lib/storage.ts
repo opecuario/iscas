@@ -9,6 +9,7 @@ export interface Usuario {
   email: string;
   telefone: string;
   estado: string;
+  simulacoesIlimitadas: boolean;
   createdAt: string;
 }
 
@@ -35,6 +36,7 @@ type UsuarioRow = {
   nome: string;
   telefone: string | null;
   estado: string | null;
+  simulacoes_ilimitadas: boolean | null;
   created_at: string;
 };
 
@@ -58,6 +60,7 @@ function mapUsuario(row: UsuarioRow): Usuario {
     nome: row.nome,
     telefone: row.telefone ?? "",
     estado: row.estado ?? "",
+    simulacoesIlimitadas: row.simulacoes_ilimitadas ?? false,
     createdAt: row.created_at,
   };
 }
