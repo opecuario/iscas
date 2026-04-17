@@ -201,6 +201,26 @@ export default function SimulacaoResumo() {
                 ]}
                 fmt={fmtBRL}
               />
+              {(sim.inputs.custosExtras ?? []).length > 0 && (
+                <>
+                  <LinhaSeparador label="Outros custos personalizados" />
+                  {saidas.realista.custosExtrasDetalhado.map((c, i) => (
+                    <LinhaOut
+                      key={i}
+                      label={c.nome || `Custo #${i + 1}`}
+                      saidas={saidas}
+                      pick={(o) => o.custosExtrasDetalhado[i]?.valor ?? 0}
+                      fmt={fmtBRL}
+                    />
+                  ))}
+                  <LinhaOut
+                    label="Total outros custos"
+                    saidas={saidas}
+                    pick={(o) => o.custosExtrasTotal}
+                    fmt={fmtBRL}
+                  />
+                </>
+              )}
               <LinhaSeparador label="Resultado" />
               <LinhaOut
                 label="Lucro total"

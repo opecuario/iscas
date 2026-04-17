@@ -1,8 +1,29 @@
 "use client";
 
-import type { InputsBase, Outputs, TipoVariante, VarianteOverride } from "@/lib/types";
+import type {
+  CustoExtra,
+  FormatoCustoExtra,
+  InputsBase,
+  Outputs,
+  TipoVariante,
+  VarianteOverride,
+} from "@/lib/types";
 import { fmtBRL, fmtInt, fmtNum } from "@/lib/format";
 import CampoNumero from "./CampoNumero";
+
+const FORMATO_LABEL: Record<FormatoCustoExtra, string> = {
+  por_cab_geral: "R$/cab (total)",
+  por_cab_mes: "R$/cab/mês",
+  mensal: "R$ mensal",
+};
+
+function novoCustoExtra(): CustoExtra {
+  const id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2);
+  return { id, nome: "", formato: "por_cab_mes", valor: 0 };
+}
 
 interface Props {
   base: InputsBase;
@@ -205,6 +226,15 @@ export default function SimuladorForm({ base, setBase, variante, override, setOv
         </div>
       </Secao>
 
+      {/* Bloco 4b — Custos extras personalizados */}
+      <CustosExtrasSecao
+        custos={base.custosExtras ?? []}
+        onChange={(lista) => set("custosExtras", lista)}
+        bloqueado={emVariante}
+        totalFmt={fmtBRL(out.custosExtrasTotal)}
+        detalhado={out.custosExtrasDetalhado}
+      />
+
       {/* Bloco 5 — Venda */}
       <Secao
         titulo="5. Venda"
@@ -291,6 +321,140 @@ export default function SimuladorForm({ base, setBase, variante, override, setOv
         )}
       </Secao>
     </div>
+  );
+}
+
+function CustosExtrasSecao({
+  custos,
+  onChange,
+  bloqueado,
+  totalFmt,
+  detalhado,
+}: {
+  custos: CustoExtra[];
+  onChange: (lista: CustoExtra[]) => void;
+  bloqueado: boolean;
+  totalFmt: string;
+  detalhado: { nome: string; valor: number }[];
+}) {
+  function atualizar(id: string, patch: Partial<CustoExtra>) {
+    onChange(custos.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+  }
+  function remover(id: string) {
+    onChange(custos.filter((c) => c.id !== id));
+  }
+  function adicionar() {
+    onChange([...custos, novoCustoExtra()]);
+  }
+
+  return (
+    <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+      <header className="mb-4 flex items-center justify-between gap-3 border-b border-neutral-100 pb-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-brand-800">
+          4b. Outros custos (personalizados)
+        </h2>
+        <button
+          type="button"
+          onClick={adicionar}
+          disabled={bloqueado}
+          className="rounded-md border border-brand-800 bg-white px-3 py-1 text-xs font-semibold text-brand-800 transition hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          + Adicionar custo
+        </button>
+      </header>
+
+      {custos.length === 0 ? (
+        <p className="text-sm text-neutral-500">
+          Adicione custos específicos da sua operação — ex.: ITR, seguro,
+          energia, arrendamento. Cada item pode ser por cabeça, por cabeça/mês
+          ou mensal absoluto.
+        </p>
+      ) : (
+        <ul className="space-y-3">
+          {custos.map((c, idx) => (
+            <li
+              key={c.id}
+              className="grid grid-cols-1 gap-3 rounded-md border border-neutral-200 bg-neutral-50 p-3 sm:grid-cols-[1fr_180px_160px_auto]"
+            >
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-medium text-brand-900/80">
+                  Nome do custo
+                </span>
+                <input
+                  type="text"
+                  value={c.nome}
+                  onChange={(e) => atualizar(c.id, { nome: e.target.value })}
+                  disabled={bloqueado}
+                  placeholder="Ex.: ITR, seguro, energia…"
+                  className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 disabled:cursor-not-allowed disabled:bg-neutral-100"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-medium text-brand-900/80">
+                  Formato
+                </span>
+                <select
+                  value={c.formato}
+                  onChange={(e) =>
+                    atualizar(c.id, {
+                      formato: e.target.value as FormatoCustoExtra,
+                    })
+                  }
+                  disabled={bloqueado}
+                  className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 disabled:cursor-not-allowed disabled:bg-neutral-100"
+                >
+                  <option value="por_cab_geral">R$/cab (total)</option>
+                  <option value="por_cab_mes">R$/cab/mês</option>
+                  <option value="mensal">R$ mensal</option>
+                </select>
+              </label>
+              <CampoNumero
+                label="Valor"
+                unidade="R$"
+                moeda
+                value={c.valor}
+                onChange={(v) => atualizar(c.id, { valor: v })}
+                bloqueado={bloqueado}
+              />
+              <div className="flex items-end justify-end">
+                <button
+                  type="button"
+                  onClick={() => remover(c.id)}
+                  disabled={bloqueado}
+                  title="Remover este custo"
+                  className="rounded-md border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Remover
+                </button>
+              </div>
+              <div className="sm:col-span-4 text-[11px] text-neutral-500">
+                #{idx + 1} · {FORMATO_LABEL[c.formato]} · Contribuição no
+                período:{" "}
+                <span className="font-semibold text-brand-900">
+                  {fmtBRL(detalhado[idx]?.valor ?? 0)}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {custos.length > 0 && (
+        <div className="mt-5 rounded-md bg-brand-50 p-3">
+          <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-brand-700">
+            Cálculo imediato
+          </div>
+          <div className="flex items-baseline justify-between gap-2">
+            <dt className="text-xs text-neutral-600">
+              Total dos custos extras no período
+            </dt>
+            <dd className="text-sm font-semibold tabular-nums text-brand-900">
+              {totalFmt}
+            </dd>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 

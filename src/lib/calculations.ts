@@ -60,8 +60,25 @@ export function calcular(base: InputsBase, override?: Partial<VarianteOverride>)
   const custoPastagem = pastagem * meses * cab;
   const custoOutros = outros * meses * cab;
   const custoSuplementoTotal = custoDiarioSuplementoCab * dias * cab;
+
+  // Custos extras personalizados
+  const extras = base.custosExtras ?? [];
+  const custosExtrasDetalhado = extras.map((c) => {
+    let valor = 0;
+    if (c.formato === "por_cab_geral") valor = c.valor * cab;
+    else if (c.formato === "por_cab_mes") valor = c.valor * cab * meses;
+    else if (c.formato === "mensal") valor = c.valor * meses;
+    return { nome: c.nome, valor };
+  });
+  const custosExtrasTotal = custosExtrasDetalhado.reduce((s, x) => s + x.valor, 0);
+
   const custoOperacionalTotal =
-    custoSalarios + custoSanidade + custoPastagem + custoOutros + custoSuplementoTotal; // B37
+    custoSalarios +
+    custoSanidade +
+    custoPastagem +
+    custoOutros +
+    custoSuplementoTotal +
+    custosExtrasTotal; // B37
   const custoOperacionalCab = custoOperacionalTotal / cab;                    // B38
   const diariaOperacao = custoOperacionalTotal / cab / dias;                  // B39
   const desembolsoCabMes = diariaOperacao * 30;                               // B40
@@ -117,6 +134,8 @@ export function calcular(base: InputsBase, override?: Partial<VarianteOverride>)
     custoPastagem,
     custoOutros,
     custoSuplementoTotal,
+    custosExtrasTotal,
+    custosExtrasDetalhado,
     custoTaxasVenda,
     custoOperacionalTotal,
     custoOperacionalCab,
@@ -160,6 +179,7 @@ export const INPUTS_PADRAO: InputsBase = {
   sanidadeCab: 0,
   pastagemCabMes: 0,
   outrosCustosCabMes: 0,
+  custosExtras: [],
   taxasVendaCab: 0,
   precoVendaArroba: 0,
   financiamentoAtivo: false,

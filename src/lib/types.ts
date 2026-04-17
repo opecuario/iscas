@@ -1,3 +1,12 @@
+export type FormatoCustoExtra = "por_cab_geral" | "por_cab_mes" | "mensal";
+
+export interface CustoExtra {
+  id: string;
+  nome: string;
+  formato: FormatoCustoExtra;
+  valor: number;
+}
+
 export interface InputsBase {
   // Compra
   precoCompraArroba: number;      // B2 — R$/@ na compra
@@ -21,6 +30,7 @@ export interface InputsBase {
   sanidadeCab: number;            // B34
   pastagemCabMes: number;         // B35
   outrosCustosCabMes: number;     // B36
+  custosExtras: CustoExtra[];     // custos personalizados adicionados pelo usuário
 
   // Venda
   taxasVendaCab: number;          // B44
@@ -67,6 +77,8 @@ export interface Outputs {
   custoPastagem: number;
   custoOutros: number;
   custoSuplementoTotal: number;
+  custosExtrasTotal: number;
+  custosExtrasDetalhado: { nome: string; valor: number }[];
   custoTaxasVenda: number;
   custoOperacionalTotal: number;      // soma de tudo acima exceto taxas
   custoOperacionalCab: number;

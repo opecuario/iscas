@@ -109,24 +109,24 @@ function CardSimulacao({
   s: SimulacaoSalva;
   onDelete: () => void;
 }) {
-  const snap = {
-    gmd: s.inputs.gmd,
-    precoCompraArroba: s.inputs.precoCompraArroba,
-    precoVendaArroba: s.inputs.precoVendaArroba,
-  };
   const resultados = [
-    { label: "Realista", out: calcular(s.inputs), preenchido: true },
-    {
-      label: "Otimista",
-      out: calcular(s.inputs, s.otimista ?? snap),
-      preenchido: s.otimista !== null,
-    },
-    {
-      label: "Pessimista",
-      out: calcular(s.inputs, s.pessimista ?? snap),
-      preenchido: s.pessimista !== null,
-    },
+    { label: "Realista", out: calcular(s.inputs) },
   ];
+  if (s.otimista !== null) {
+    resultados.push({ label: "Otimista", out: calcular(s.inputs, s.otimista) });
+  }
+  if (s.pessimista !== null) {
+    resultados.push({
+      label: "Pessimista",
+      out: calcular(s.inputs, s.pessimista),
+    });
+  }
+  const gridCols =
+    resultados.length === 1
+      ? "grid-cols-1"
+      : resultados.length === 2
+      ? "grid-cols-2"
+      : "grid-cols-3";
   const finalizada = s.etapaAtual === "finalizado";
   const href = finalizada ? `/simulacao/${s.id}` : `/nova?id=${s.id}`;
   const dataFmt = new Date(s.updatedAt).toLocaleDateString("pt-BR");
@@ -163,21 +163,14 @@ function CardSimulacao({
         </button>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      <div className={`mt-4 grid ${gridCols} gap-2`}>
         {resultados.map((r) => (
           <div
             key={r.label}
-            className={`rounded-md border p-2.5 text-xs ${
-              r.preenchido
-                ? "border-neutral-200 bg-neutral-50"
-                : "border-dashed border-neutral-200 bg-white"
-            }`}
+            className="rounded-md border border-neutral-200 bg-neutral-50 p-2.5 text-xs"
           >
             <div className="flex items-center justify-between">
               <span className="font-semibold text-brand-900">{r.label}</span>
-              {!r.preenchido && (
-                <span className="text-[10px] text-neutral-400">= realista</span>
-              )}
             </div>
             <div className="mt-1.5">
               <div className="text-[10px] text-neutral-500">Lucro</div>
