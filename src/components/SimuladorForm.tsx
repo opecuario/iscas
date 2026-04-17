@@ -215,25 +215,15 @@ export default function SimuladorForm({ base, setBase, variante, override, setOv
             bloqueado={emVariante}
             dica="Arrendamento, manutenção e adubação por cabeça por mês."
           />
-          <CampoNumero
-            label="Outros custos"
-            unidade="R$/cab/mês"
-            moeda
-            value={base.outrosCustosCabMes}
-            onChange={(v) => set("outrosCustosCabMes", v)}
-            bloqueado={emVariante}
-          />
         </div>
-      </Secao>
 
-      {/* Bloco 4b — Custos extras personalizados */}
-      <CustosExtrasSecao
-        custos={base.custosExtras ?? []}
-        onChange={(lista) => set("custosExtras", lista)}
-        bloqueado={emVariante}
-        totalFmt={fmtBRL(out.custosExtrasTotal)}
-        detalhado={out.custosExtrasDetalhado}
-      />
+        <CustosExtrasBloco
+          custos={base.custosExtras ?? []}
+          onChange={(lista) => set("custosExtras", lista)}
+          bloqueado={emVariante}
+          detalhado={out.custosExtrasDetalhado}
+        />
+      </Secao>
 
       {/* Bloco 5 — Venda */}
       <Secao
@@ -324,17 +314,15 @@ export default function SimuladorForm({ base, setBase, variante, override, setOv
   );
 }
 
-function CustosExtrasSecao({
+function CustosExtrasBloco({
   custos,
   onChange,
   bloqueado,
-  totalFmt,
   detalhado,
 }: {
   custos: CustoExtra[];
   onChange: (lista: CustoExtra[]) => void;
   bloqueado: boolean;
-  totalFmt: string;
   detalhado: { nome: string; valor: number }[];
 }) {
   function atualizar(id: string, patch: Partial<CustoExtra>) {
@@ -348,11 +336,11 @@ function CustosExtrasSecao({
   }
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
-      <header className="mb-4 flex items-center justify-between gap-3 border-b border-neutral-100 pb-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-brand-800">
-          4b. Outros custos (personalizados)
-        </h2>
+    <div className="mt-6 border-t border-neutral-100 pt-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-brand-700">
+          Outros custos (personalizados)
+        </h3>
         <button
           type="button"
           onClick={adicionar}
@@ -361,13 +349,13 @@ function CustosExtrasSecao({
         >
           + Adicionar custo
         </button>
-      </header>
+      </div>
 
       {custos.length === 0 ? (
-        <p className="text-sm text-neutral-500">
+        <p className="text-xs text-neutral-500">
           Adicione custos específicos da sua operação — ex.: ITR, seguro,
-          energia, arrendamento. Cada item pode ser por cabeça, por cabeça/mês
-          ou mensal absoluto.
+          energia, contador. Escolha o formato (por cabeça, por cabeça/mês ou
+          mensal) que entrará no custo operacional.
         </p>
       ) : (
         <ul className="space-y-3">
@@ -438,23 +426,7 @@ function CustosExtrasSecao({
           ))}
         </ul>
       )}
-
-      {custos.length > 0 && (
-        <div className="mt-5 rounded-md bg-brand-50 p-3">
-          <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-brand-700">
-            Cálculo imediato
-          </div>
-          <div className="flex items-baseline justify-between gap-2">
-            <dt className="text-xs text-neutral-600">
-              Total dos custos extras no período
-            </dt>
-            <dd className="text-sm font-semibold tabular-nums text-brand-900">
-              {totalFmt}
-            </dd>
-          </div>
-        </div>
-      )}
-    </section>
+    </div>
   );
 }
 

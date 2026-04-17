@@ -52,8 +52,11 @@ function FechamentoFinanceiro({ out, cab }: { out: Outputs; cab: number }) {
     { label: "Salários", total: out.custoSalarios },
     { label: "Sanidade", total: out.custoSanidade },
     { label: "Pastagem", total: out.custoPastagem },
-    { label: "Outros custos", total: out.custoOutros },
     { label: "Suplementação", total: out.custoSuplementoTotal },
+    ...out.custosExtrasDetalhado.map((c, i) => ({
+      label: c.nome || `Outro custo #${i + 1}`,
+      total: c.valor,
+    })),
     { label: "Taxas de venda", total: out.custoTaxasVenda },
   ];
 

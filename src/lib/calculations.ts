@@ -23,7 +23,6 @@ export function calcular(base: InputsBase, override?: Partial<VarianteOverride>)
     salariosMensal: salarios,
     sanidadeCab: sanidade,
     pastagemCabMes: pastagem,
-    outrosCustosCabMes: outros,
     taxasVendaCab: taxas,
     financiamentoAtivo,
     financiamentoTaxaAnualPct: taxaFin,
@@ -58,7 +57,6 @@ export function calcular(base: InputsBase, override?: Partial<VarianteOverride>)
   const custoSalarios = meses * salarios;
   const custoSanidade = sanidade * cab;
   const custoPastagem = pastagem * meses * cab;
-  const custoOutros = outros * meses * cab;
   const custoSuplementoTotal = custoDiarioSuplementoCab * dias * cab;
 
   // Custos extras personalizados
@@ -76,7 +74,6 @@ export function calcular(base: InputsBase, override?: Partial<VarianteOverride>)
     custoSalarios +
     custoSanidade +
     custoPastagem +
-    custoOutros +
     custoSuplementoTotal +
     custosExtrasTotal; // B37
   const custoOperacionalCab = custoOperacionalTotal / cab;                    // B38
@@ -132,7 +129,6 @@ export function calcular(base: InputsBase, override?: Partial<VarianteOverride>)
     custoSalarios,
     custoSanidade,
     custoPastagem,
-    custoOutros,
     custoSuplementoTotal,
     custosExtrasTotal,
     custosExtrasDetalhado,
@@ -178,7 +174,6 @@ export const INPUTS_PADRAO: InputsBase = {
   salariosMensal: 0,
   sanidadeCab: 0,
   pastagemCabMes: 0,
-  outrosCustosCabMes: 0,
   custosExtras: [],
   taxasVendaCab: 0,
   precoVendaArroba: 0,

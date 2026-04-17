@@ -29,7 +29,6 @@ export interface InputsBase {
   salariosMensal: number;         // B33
   sanidadeCab: number;            // B34
   pastagemCabMes: number;         // B35
-  outrosCustosCabMes: number;     // B36
   custosExtras: CustoExtra[];     // custos personalizados adicionados pelo usuário
 
   // Venda
@@ -75,7 +74,6 @@ export interface Outputs {
   custoSalarios: number;
   custoSanidade: number;
   custoPastagem: number;
-  custoOutros: number;
   custoSuplementoTotal: number;
   custosExtrasTotal: number;
   custosExtrasDetalhado: { nome: string; valor: number }[];
