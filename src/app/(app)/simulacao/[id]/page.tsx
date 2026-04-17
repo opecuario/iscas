@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { calcular } from "@/lib/calculations";
-import { fmtBRL, fmtPct } from "@/lib/format";
+import { fmtBRL, fmtInt, fmtNum, fmtPct } from "@/lib/format";
 
 const NUM3 = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 });
 const fmtGmd = (v: number) => (isFinite(v) ? NUM3.format(v) : "—");
@@ -13,13 +13,35 @@ import {
   getSimulacao,
   type SimulacaoSalva,
 } from "@/lib/storage";
-import type { Outputs, TipoVariante, VarianteOverride } from "@/lib/types";
+import type {
+  InputsBase,
+  Outputs,
+  TipoVariante,
+  VarianteOverride,
+} from "@/lib/types";
 
-const VARIANTES: { id: TipoVariante; label: string; cor: string }[] = [
-  { id: "realista", label: "Realista", cor: "bg-brand-800" },
-  { id: "otimista", label: "Otimista", cor: "bg-emerald-700" },
-  { id: "pessimista", label: "Pessimista", cor: "bg-amber-700" },
-];
+type CenarioAtivo = {
+  id: TipoVariante;
+  label: string;
+  cor: string;
+  override: VarianteOverride; // já aplicado (para realista, igual ao snapshot do base)
+  out: Outputs;
+};
+
+function varianteEfetiva(
+  base: InputsBase,
+  override: VarianteOverride | null
+): VarianteOverride | null {
+  if (!override) return null;
+  if (
+    override.gmd === base.gmd &&
+    override.precoCompraArroba === base.precoCompraArroba &&
+    override.precoVendaArroba === base.precoVendaArroba
+  ) {
+    return null;
+  }
+  return override;
+}
 
 export default function SimulacaoResumo() {
   const router = useRouter();
@@ -39,18 +61,43 @@ export default function SimulacaoResumo() {
     };
   }, [id]);
 
-  const saidas = useMemo(() => {
-    if (!sim) return null;
+  const cenarios = useMemo<CenarioAtivo[]>(() => {
+    if (!sim) return [];
     const snap: VarianteOverride = {
       gmd: sim.inputs.gmd,
       precoCompraArroba: sim.inputs.precoCompraArroba,
       precoVendaArroba: sim.inputs.precoVendaArroba,
     };
-    return {
-      realista: calcular(sim.inputs),
-      otimista: calcular(sim.inputs, sim.otimista ?? snap),
-      pessimista: calcular(sim.inputs, sim.pessimista ?? snap),
-    };
+    const arr: CenarioAtivo[] = [
+      {
+        id: "realista",
+        label: "Realista",
+        cor: "bg-brand-800",
+        override: snap,
+        out: calcular(sim.inputs),
+      },
+    ];
+    const o = varianteEfetiva(sim.inputs, sim.otimista);
+    if (o) {
+      arr.push({
+        id: "otimista",
+        label: "Otimista",
+        cor: "bg-emerald-700",
+        override: o,
+        out: calcular(sim.inputs, o),
+      });
+    }
+    const p = varianteEfetiva(sim.inputs, sim.pessimista);
+    if (p) {
+      arr.push({
+        id: "pessimista",
+        label: "Pessimista",
+        cor: "bg-amber-700",
+        override: p,
+        out: calcular(sim.inputs, p),
+      });
+    }
+    return arr;
   }, [sim]);
 
   if (naoEncontrada) {
@@ -72,17 +119,13 @@ export default function SimulacaoResumo() {
     );
   }
 
-  if (!sim || !saidas) {
+  if (!sim || cenarios.length === 0) {
     return (
       <div className="p-10 text-sm text-neutral-500">Carregando simulação…</div>
     );
   }
 
-  const lucros = [
-    saidas.realista.lucro,
-    saidas.otimista.lucro,
-    saidas.pessimista.lucro,
-  ];
+  const lucros = cenarios.map((c) => c.out.lucro);
   const maxAbs = Math.max(...lucros.map(Math.abs), 1);
 
   async function excluir() {
@@ -129,14 +172,14 @@ export default function SimulacaoResumo() {
           Comparativo de lucro total
         </h2>
         <div className="mt-4 space-y-3">
-          {VARIANTES.map((v, i) => {
-            const lucro = lucros[i];
+          {cenarios.map((c) => {
+            const lucro = c.out.lucro;
             const pct = (Math.abs(lucro) / maxAbs) * 100;
             const positivo = lucro >= 0;
             return (
-              <div key={v.id}>
+              <div key={c.id}>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-brand-900">{v.label}</span>
+                  <span className="font-medium text-brand-900">{c.label}</span>
                   <span
                     className={
                       positivo ? "text-emerald-700" : "text-red-700"
@@ -148,7 +191,7 @@ export default function SimulacaoResumo() {
                 <div className="mt-1 h-3 w-full overflow-hidden rounded bg-neutral-100">
                   <div
                     className={`h-full ${
-                      positivo ? v.cor : "bg-red-600"
+                      positivo ? c.cor : "bg-red-600"
                     } transition-all`}
                     style={{ width: `${pct}%` }}
                   />
@@ -166,109 +209,136 @@ export default function SimulacaoResumo() {
             <thead>
               <tr className="border-b border-neutral-200 bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-500">
                 <th className="px-4 py-3 font-semibold">Indicador</th>
-                {VARIANTES.map((v) => (
-                  <th key={v.id} className="px-4 py-3 font-semibold">
-                    {v.label}
+                {cenarios.map((c) => (
+                  <th key={c.id} className="px-4 py-3 font-semibold">
+                    {c.label}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              <LinhaComparativa
+              <LinhaCen
                 label="Preço de compra (R$/@)"
-                valores={[
-                  sim.inputs.precoCompraArroba,
-                  sim.otimista?.precoCompraArroba ?? sim.inputs.precoCompraArroba,
-                  sim.pessimista?.precoCompraArroba ?? sim.inputs.precoCompraArroba,
-                ]}
+                cenarios={cenarios}
+                pick={(c) => c.override.precoCompraArroba}
                 fmt={fmtBRL}
               />
-              <LinhaComparativa
+              <LinhaCen
                 label="GMD (kg/dia)"
-                valores={[
-                  sim.inputs.gmd,
-                  sim.otimista?.gmd ?? sim.inputs.gmd,
-                  sim.pessimista?.gmd ?? sim.inputs.gmd,
-                ]}
+                cenarios={cenarios}
+                pick={(c) => c.override.gmd}
                 fmt={fmtGmd}
               />
-              <LinhaComparativa
+              <LinhaCen
                 label="Preço de venda (R$/@)"
-                valores={[
-                  sim.inputs.precoVendaArroba,
-                  sim.otimista?.precoVendaArroba ?? sim.inputs.precoVendaArroba,
-                  sim.pessimista?.precoVendaArroba ?? sim.inputs.precoVendaArroba,
-                ]}
+                cenarios={cenarios}
+                pick={(c) => c.override.precoVendaArroba}
                 fmt={fmtBRL}
+              />
+              <LinhaSeparador
+                label="Resumo do gado"
+                colSpan={cenarios.length + 1}
+              />
+              <LinhaCen
+                label="Peso de entrada (kg)"
+                cenarios={cenarios}
+                pick={() => sim.inputs.pesoCompraKg}
+                fmt={fmtInt}
+              />
+              <LinhaCen
+                label="Peso de saída (kg)"
+                cenarios={cenarios}
+                pick={(c) => c.out.pesoSaidaKg}
+                fmt={fmtInt}
+              />
+              <LinhaCen
+                label="Peso de saída (@ carcaça)"
+                cenarios={cenarios}
+                pick={(c) => c.out.pesoSaidaArroba}
+                fmt={fmtNum}
+              />
+              <LinhaCen
+                label="Período (dias)"
+                cenarios={cenarios}
+                pick={() => sim.inputs.periodoDias}
+                fmt={fmtInt}
               />
               {(sim.inputs.custosExtras ?? []).length > 0 && (
                 <>
-                  <LinhaSeparador label="Outros custos personalizados" />
-                  {saidas.realista.custosExtrasDetalhado.map((c, i) => (
-                    <LinhaOut
+                  <LinhaSeparador
+                    label="Outros custos personalizados"
+                    colSpan={cenarios.length + 1}
+                  />
+                  {cenarios[0].out.custosExtrasDetalhado.map((c, i) => (
+                    <LinhaCen
                       key={i}
                       label={c.nome || `Custo #${i + 1}`}
-                      saidas={saidas}
-                      pick={(o) => o.custosExtrasDetalhado[i]?.valor ?? 0}
+                      cenarios={cenarios}
+                      pick={(cc) =>
+                        cc.out.custosExtrasDetalhado[i]?.valor ?? 0
+                      }
                       fmt={fmtBRL}
                     />
                   ))}
-                  <LinhaOut
+                  <LinhaCen
                     label="Total outros custos"
-                    saidas={saidas}
-                    pick={(o) => o.custosExtrasTotal}
+                    cenarios={cenarios}
+                    pick={(c) => c.out.custosExtrasTotal}
                     fmt={fmtBRL}
                   />
                 </>
               )}
-              <LinhaSeparador label="Resultado" />
-              <LinhaOut
+              <LinhaSeparador
+                label="Resultado"
+                colSpan={cenarios.length + 1}
+              />
+              <LinhaCen
                 label="Lucro total"
-                saidas={saidas}
-                pick={(o) => o.lucro}
+                cenarios={cenarios}
+                pick={(c) => c.out.lucro}
                 fmt={fmtBRL}
                 destacar
               />
-              <LinhaOut
+              <LinhaCen
                 label="Lucro por cabeça"
-                saidas={saidas}
-                pick={(o) => o.lucroCab}
+                cenarios={cenarios}
+                pick={(c) => c.out.lucroCab}
                 fmt={fmtBRL}
               />
-              <LinhaOut
+              <LinhaCen
                 label="Lucro por hectare"
-                saidas={saidas}
-                pick={(o) => o.lucroHa}
+                cenarios={cenarios}
+                pick={(c) => c.out.lucroHa}
                 fmt={fmtBRL}
               />
-              <LinhaOut
+              <LinhaCen
                 label="Rentabilidade da operação"
-                saidas={saidas}
-                pick={(o) => o.rentabilidadeOperacao}
+                cenarios={cenarios}
+                pick={(c) => c.out.rentabilidadeOperacao}
                 fmt={fmtPct}
               />
-              <LinhaOut
+              <LinhaCen
                 label="Rentabilidade anual"
-                saidas={saidas}
-                pick={(o) => o.rentabilidadeAno}
+                cenarios={cenarios}
+                pick={(c) => c.out.rentabilidadeAno}
                 fmt={fmtPct}
               />
-              <LinhaOut
+              <LinhaCen
                 label="Custo da @ produzida"
-                saidas={saidas}
-                pick={(o) => o.custoArrobaProduzida}
+                cenarios={cenarios}
+                pick={(c) => c.out.custoArrobaProduzida}
                 fmt={fmtBRL}
               />
-              <LinhaOut
+              <LinhaCen
                 label="Faturamento total"
-                saidas={saidas}
-                pick={(o) => o.faturamentoTotal}
+                cenarios={cenarios}
+                pick={(c) => c.out.faturamentoTotal}
                 fmt={fmtBRL}
               />
-              <LinhaOut
+              <LinhaCen
                 label="Desembolso total"
-                saidas={saidas}
-                pick={(o) => o.totalDesembolsado}
+                cenarios={cenarios}
+                pick={(c) => c.out.totalDesembolsado}
                 fmt={fmtBRL}
               />
             </tbody>
@@ -297,69 +367,60 @@ export default function SimulacaoResumo() {
   );
 }
 
-function LinhaComparativa({
+function LinhaCen({
   label,
-  valores,
-  fmt,
-}: {
-  label: string;
-  valores: number[];
-  fmt: (v: number) => string;
-}) {
-  return (
-    <tr>
-      <td className="px-4 py-2.5 text-neutral-700">{label}</td>
-      {valores.map((v, i) => (
-        <td key={i} className="px-4 py-2.5 font-medium text-brand-900">
-          {fmt(v)}
-        </td>
-      ))}
-    </tr>
-  );
-}
-
-function LinhaOut({
-  label,
-  saidas,
+  cenarios,
   pick,
   fmt,
   destacar,
 }: {
   label: string;
-  saidas: { realista: Outputs; otimista: Outputs; pessimista: Outputs };
-  pick: (o: Outputs) => number;
+  cenarios: CenarioAtivo[];
+  pick: (c: CenarioAtivo) => number;
   fmt: (v: number) => string;
   destacar?: boolean;
 }) {
-  const vals = [pick(saidas.realista), pick(saidas.otimista), pick(saidas.pessimista)];
   return (
     <tr className={destacar ? "bg-brand-50/40" : ""}>
-      <td className={`px-4 py-2.5 ${destacar ? "font-semibold text-brand-900" : "text-neutral-700"}`}>
+      <td
+        className={`px-4 py-2.5 ${
+          destacar ? "font-semibold text-brand-900" : "text-neutral-700"
+        }`}
+      >
         {label}
       </td>
-      {vals.map((v, i) => (
-        <td
-          key={i}
-          className={`px-4 py-2.5 font-medium ${
-            destacar
-              ? v >= 0
-                ? "text-emerald-700"
-                : "text-red-700"
-              : "text-brand-900"
-          }`}
-        >
-          {fmt(v)}
-        </td>
-      ))}
+      {cenarios.map((c) => {
+        const v = pick(c);
+        return (
+          <td
+            key={c.id}
+            className={`px-4 py-2.5 font-medium ${
+              destacar
+                ? v >= 0
+                  ? "text-emerald-700"
+                  : "text-red-700"
+                : "text-brand-900"
+            }`}
+          >
+            {fmt(v)}
+          </td>
+        );
+      })}
     </tr>
   );
 }
 
-function LinhaSeparador({ label }: { label: string }) {
+function LinhaSeparador({
+  label,
+  colSpan,
+}: {
+  label: string;
+  colSpan: number;
+}) {
   return (
     <tr>
       <td
-        colSpan={4}
+        colSpan={colSpan}
         className="border-t-2 border-brand-200 bg-brand-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-brand-800"
       >
         {label}

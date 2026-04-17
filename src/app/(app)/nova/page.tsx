@@ -129,6 +129,10 @@ function NovaPage() {
   }
 
   const out = useMemo(() => calcular(base, override), [base, override]);
+  const inputsEfetivos = useMemo<InputsBase>(
+    () => (override ? { ...base, ...override } : base),
+    [base, override]
+  );
 
   function copiarDoRealista() {
     if (variante === "otimista") setOtimista(snapshotDoBase(base));
@@ -263,7 +267,7 @@ function NovaPage() {
             </div>
           </div>
           <div className="mt-4">
-            <ResultadosPainel out={out} cab={base.qtdCabecas} />
+            <ResultadosPainel out={out} cab={base.qtdCabecas} inputs={inputsEfetivos} />
           </div>
         </aside>
       </div>

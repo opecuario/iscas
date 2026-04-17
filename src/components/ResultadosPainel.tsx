@@ -1,9 +1,17 @@
 "use client";
 
-import type { Outputs } from "@/lib/types";
-import { fmtBRL, fmtNum, fmtPct } from "@/lib/format";
+import type { InputsBase, Outputs } from "@/lib/types";
+import { fmtBRL, fmtInt, fmtNum, fmtPct } from "@/lib/format";
 
-export default function ResultadosPainel({ out, cab }: { out: Outputs; cab: number }) {
+export default function ResultadosPainel({
+  out,
+  cab,
+  inputs,
+}: {
+  out: Outputs;
+  cab: number;
+  inputs: InputsBase;
+}) {
   return (
     <div className="space-y-4">
       {/* Destaques */}
@@ -27,6 +35,17 @@ export default function ResultadosPainel({ out, cab }: { out: Outputs; cab: numb
 
       {/* Fechamento financeiro */}
       <FechamentoFinanceiro out={out} cab={cab} />
+
+      {/* Resumo do gado */}
+      <Grupo titulo="Resumo do gado">
+        <Linha label="Peso de entrada" val={`${fmtInt(inputs.pesoCompraKg)} kg`} />
+        <Linha
+          label="Peso de saída"
+          val={`${fmtInt(out.pesoSaidaKg)} kg (${fmtNum(out.pesoSaidaArroba)} @ carcaça)`}
+        />
+        <Linha label="Período" val={`${fmtInt(inputs.periodoDias)} dias`} />
+        <Linha label="GMD" val={`${fmtNum(inputs.gmd)} kg/dia`} />
+      </Grupo>
 
       {/* Indicadores-chave (todos) */}
       <Grupo titulo="Indicadores-chave" destaque>
