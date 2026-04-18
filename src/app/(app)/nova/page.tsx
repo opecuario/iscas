@@ -22,24 +22,48 @@ import type {
 } from "@/lib/types";
 
 function snapshotDoBase(base: InputsBase): VarianteOverride {
+  const gmdPorFase: Record<string, number> = {};
+  for (const f of base.fases) gmdPorFase[f.id] = f.gmd;
   return {
-    gmd: base.gmd,
     precoCompraArroba: base.precoCompraArroba,
     precoVendaArroba: base.precoVendaArroba,
+    gmdPorFase,
   };
 }
 
-/** Se o override não diferir do base em nenhum dos 3 campos, não tem cenário de fato. */
+/** Se o override não diferir do base em nenhum campo, não tem cenário de fato. */
 function normalizarVariante(
   base: InputsBase,
   override: VarianteOverride | null
 ): VarianteOverride | null {
   if (!override) return null;
-  const igual =
-    override.gmd === base.gmd &&
-    override.precoCompraArroba === base.precoCompraArroba &&
-    override.precoVendaArroba === base.precoVendaArroba;
-  return igual ? null : override;
+  if (
+    override.precoCompraArroba !== base.precoCompraArroba ||
+    override.precoVendaArroba !== base.precoVendaArroba
+  ) {
+    return override;
+  }
+  for (const f of base.fases) {
+    const gmdOv = override.gmdPorFase?.[f.id];
+    if (gmdOv !== undefined && gmdOv !== f.gmd) return override;
+  }
+  return null;
+}
+
+/** Mescla o override sobre a base para exibi\u00e7\u00e3o (resumo/pain\u00e9is). */
+function aplicarOverrideEmInputs(
+  base: InputsBase,
+  override: VarianteOverride
+): InputsBase {
+  return {
+    ...base,
+    precoCompraArroba: override.precoCompraArroba,
+    precoVendaArroba: override.precoVendaArroba,
+    fases: base.fases.map((f) => ({
+      ...f,
+      gmd: override.gmdPorFase?.[f.id] ?? f.gmd,
+    })),
+  };
 }
 
 const ORDEM: TipoVariante[] = ["realista", "otimista", "pessimista"];
@@ -130,7 +154,7 @@ function NovaPage() {
 
   const out = useMemo(() => calcular(base, override), [base, override]);
   const inputsEfetivos = useMemo<InputsBase>(
-    () => (override ? { ...base, ...override } : base),
+    () => aplicarOverrideEmInputs(base, override),
     [base, override]
   );
 
@@ -262,8 +286,8 @@ function NovaPage() {
               Resultado — {labelVariante(variante)}
             </div>
             <div className="text-lg font-semibold">
-              {base.qtdCabecas || 0} cab · {base.areaHa || 0} ha ·{" "}
-              {base.periodoDias || 0} dias
+              {base.qtdCabecas || 0} cab · {out.areaMaxima || 0} ha ·{" "}
+              {out.diasTotal || 0} dias
             </div>
           </div>
           <div className="mt-4">
@@ -389,17 +413,17 @@ function VarianteBanner({
     return (
       <div className="mb-6 rounded-md border border-brand-200 bg-brand-50 p-3 text-sm text-brand-900">
         <strong>Cenário realista:</strong> preencha seu cenário base. Todos os
-        campos ficarão trancados nos próximos cenários — só GMD, preço de compra
-        (R$/@) e preço de venda (R$/@) poderão variar.
+        campos ficarão trancados nos próximos cenários — só o GMD de cada fase,
+        preço de compra (R$/@) e preço de venda (R$/@) poderão variar.
       </div>
     );
   }
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
       <div>
-        <strong>Cenário {labelVariante(variante).toLowerCase()}:</strong> só
-        GMD, preço de compra (R$/@) e preço de venda (R$/@) são editáveis — o
-        resto herda do realista.
+        <strong>Cenário {labelVariante(variante).toLowerCase()}:</strong> só o
+        GMD de cada fase, preço de compra (R$/@) e preço de venda (R$/@) são
+        editáveis — o resto herda do realista.
       </div>
       <button
         onClick={onCopiarDoRealista}

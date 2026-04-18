@@ -137,7 +137,8 @@ export default function Sidebar() {
                         {ETAPA_LABEL[s.etapaAtual]}
                       </span>
                       <span className="text-neutral-500">
-                        {s.inputs.qtdCabecas || 0} cab · {s.inputs.areaHa || 0} ha
+                        {s.inputs.qtdCabecas || 0} cab ·{" "}
+                        {s.inputs.fases.reduce((m, f) => Math.max(m, f.areaHa), 0) || 0} ha
                       </span>
                     </div>
                   </Link>

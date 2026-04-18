@@ -19,13 +19,20 @@ function varianteEfetiva(
 ): VarianteOverride | null {
   if (!override) return null;
   if (
-    override.gmd === base.gmd &&
-    override.precoCompraArroba === base.precoCompraArroba &&
-    override.precoVendaArroba === base.precoVendaArroba
+    override.precoCompraArroba !== base.precoCompraArroba ||
+    override.precoVendaArroba !== base.precoVendaArroba
   ) {
-    return null;
+    return override;
   }
-  return override;
+  for (const f of base.fases) {
+    const gmdOv = override.gmdPorFase?.[f.id];
+    if (gmdOv !== undefined && gmdOv !== f.gmd) return override;
+  }
+  return null;
+}
+
+function areaTotalBase(base: InputsBase): number {
+  return base.fases.reduce((m, f) => Math.max(m, f.areaHa), 0);
 }
 
 const ETAPA_LABEL: Record<SimulacaoSalva["etapaAtual"], string> = {
@@ -172,7 +179,7 @@ function CardSimulacao({
               {ETAPA_LABEL[s.etapaAtual]}
             </span>
             <span className="text-neutral-500">
-              {s.inputs.qtdCabecas || 0} cab · {s.inputs.areaHa || 0} ha ·
+              {s.inputs.qtdCabecas || 0} cab · {areaTotalBase(s.inputs) || 0} ha ·
               atualizada em {dataFmt}
             </span>
           </div>

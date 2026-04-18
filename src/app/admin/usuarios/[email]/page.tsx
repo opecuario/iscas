@@ -155,7 +155,8 @@ export default function AdminUsuarioDetalhe() {
                       </span>
                     </div>
                     <div className="mt-1 text-xs text-neutral-500">
-                      {s.inputs.qtdCabecas || 0} cab · {s.inputs.areaHa || 0} ha
+                      {s.inputs.qtdCabecas || 0} cab ·{" "}
+                      {s.inputs.fases.reduce((m, f) => Math.max(m, f.areaHa), 0) || 0} ha
                       · atualizada em{" "}
                       {new Date(s.updatedAt).toLocaleDateString("pt-BR")}
                     </div>

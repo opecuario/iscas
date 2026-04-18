@@ -1,7 +1,7 @@
 "use client";
 
 import { supabase } from "./supabase";
-import type { InputsBase, VarianteOverride } from "./types";
+import type { CustoExtra, Fase, InputsBase, VarianteOverride } from "./types";
 
 export interface Usuario {
   id: string;
@@ -46,12 +46,91 @@ type SimulacaoRow = {
   nome: string;
   tipo: string;
   etapa_atual: string;
-  inputs: InputsBase;
-  otimista: VarianteOverride | null;
-  pessimista: VarianteOverride | null;
+  inputs: unknown;
+  otimista: unknown;
+  pessimista: unknown;
   created_at: string;
   updated_at: string;
 };
+
+// ---------- Migração de shape antigo -> fases ------------------
+// Simulações criadas antes do suporte a múltiplas fases têm campos top-level
+// (gmd, periodoDias, areaHa, mortalidadePct, consumoSuplementoPctPV, precoSuplementoKg).
+// Convertemos para uma única fase "Período único" para manter compatibilidade.
+
+const FASE_UNICA_ID = "periodo-unico";
+
+type InputsAntigo = {
+  gmd?: number;
+  periodoDias?: number;
+  areaHa?: number;
+  mortalidadePct?: number;
+  consumoSuplementoPctPV?: number;
+  precoSuplementoKg?: number;
+};
+
+function migrarInputs(raw: unknown): InputsBase {
+  const r = (raw ?? {}) as Partial<InputsBase> & InputsAntigo & Record<string, unknown>;
+  const temFases = Array.isArray(r.fases) && r.fases.length > 0;
+
+  const fases: Fase[] = temFases
+    ? (r.fases as Fase[])
+    : [
+        {
+          id: FASE_UNICA_ID,
+          nome: "Período único",
+          diasNoPeriodo: Number(r.periodoDias ?? 0),
+          areaHa: Number(r.areaHa ?? 0),
+          gmd: Number(r.gmd ?? 0),
+          mortalidadePct: Number(r.mortalidadePct ?? 0),
+          consumoSuplementoPctPV: Number(r.consumoSuplementoPctPV ?? 0),
+          precoSuplementoKg: Number(r.precoSuplementoKg ?? 0),
+        },
+      ];
+
+  return {
+    precoCompraArroba: Number(r.precoCompraArroba ?? 0),
+    pesoCompraKg: Number(r.pesoCompraKg ?? 0),
+    freteComissaoCab: Number(r.freteComissaoCab ?? 0),
+    qtdCabecas: Number(r.qtdCabecas ?? 0),
+    fases,
+    salariosMensal: Number(r.salariosMensal ?? 0),
+    sanidadeCab: Number(r.sanidadeCab ?? 0),
+    pastagemCabMes: Number(r.pastagemCabMes ?? 0),
+    custosExtras: (r.custosExtras as CustoExtra[] | undefined) ?? [],
+    taxasVendaCab: Number(r.taxasVendaCab ?? 0),
+    precoVendaArroba: Number(r.precoVendaArroba ?? 0),
+    rendimentoCarcacaPct: Number(r.rendimentoCarcacaPct ?? 0.5),
+    financiamentoAtivo: Boolean(r.financiamentoAtivo ?? false),
+    financiamentoTaxaAnualPct: Number(r.financiamentoTaxaAnualPct ?? 0),
+    financiamentoValorCaptado: Number(r.financiamentoValorCaptado ?? 0),
+  };
+}
+
+function migrarVariante(
+  raw: unknown,
+  fases: Fase[]
+): VarianteOverride | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Partial<VarianteOverride> & { gmd?: number };
+
+  let gmdPorFase: Record<string, number>;
+  if (r.gmdPorFase && typeof r.gmdPorFase === "object") {
+    gmdPorFase = { ...r.gmdPorFase };
+  } else if (typeof r.gmd === "number") {
+    // Variante antiga: um único GMD. Aplica a todas as fases (normalmente 1 só).
+    gmdPorFase = {};
+    for (const f of fases) gmdPorFase[f.id] = r.gmd;
+  } else {
+    gmdPorFase = {};
+  }
+
+  return {
+    precoCompraArroba: Number(r.precoCompraArroba ?? 0),
+    precoVendaArroba: Number(r.precoVendaArroba ?? 0),
+    gmdPorFase,
+  };
+}
 
 function mapUsuario(row: UsuarioRow): Usuario {
   return {
@@ -66,15 +145,16 @@ function mapUsuario(row: UsuarioRow): Usuario {
 }
 
 function mapSimulacao(row: SimulacaoRow): SimulacaoSalva {
+  const inputs = migrarInputs(row.inputs);
   return {
     id: row.id,
     usuarioId: row.usuario_id,
     nome: row.nome,
     tipo: "recria_engorda",
     etapaAtual: row.etapa_atual as EtapaAtual,
-    inputs: row.inputs,
-    otimista: row.otimista,
-    pessimista: row.pessimista,
+    inputs,
+    otimista: migrarVariante(row.otimista, inputs.fases),
+    pessimista: migrarVariante(row.pessimista, inputs.fases),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

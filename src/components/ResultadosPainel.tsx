@@ -43,9 +43,22 @@ export default function ResultadosPainel({
           label="Peso de saída"
           val={`${fmtInt(out.pesoSaidaKg)} kg (${fmtNum(out.pesoSaidaArroba)} @ carcaça)`}
         />
-        <Linha label="Período" val={`${fmtInt(inputs.periodoDias)} dias`} />
-        <Linha label="GMD" val={`${fmtNum(inputs.gmd)} kg/dia`} />
+        <Linha label="Período total" val={`${fmtInt(out.diasTotal)} dias`} />
+        <Linha label="GMD médio" val={`${fmtNum(out.gmdMedio)} kg/dia`} />
       </Grupo>
+
+      {/* Detalhamento por fase */}
+      {out.fases.length > 0 && (
+        <Grupo titulo="Fases do manejo">
+          {out.fases.map((f) => (
+            <Linha
+              key={f.id}
+              label={f.nome}
+              val={`${fmtInt(f.dias)} d · GMD ${fmtNum(f.gmd)} · ${fmtBRL(f.custoTotalFase)}`}
+            />
+          ))}
+        </Grupo>
+      )}
 
       {/* Indicadores-chave (todos) */}
       <Grupo titulo="Indicadores-chave" destaque>

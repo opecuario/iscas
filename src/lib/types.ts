@@ -7,48 +7,83 @@ export interface CustoExtra {
   valor: number;
 }
 
+export interface Fase {
+  id: string;
+  nome: string;
+  diasNoPeriodo: number;
+  areaHa: number;
+  gmd: number;
+  mortalidadePct: number;
+  consumoSuplementoPctPV: number;
+  precoSuplementoKg: number;
+  /** Fase em confinamento: ignora área/pastagem/lotação. */
+  confinamento?: boolean;
+}
+
 export interface InputsBase {
   // Compra
-  precoCompraArroba: number;      // B2 — R$/@ na compra
-  pesoCompraKg: number;           // B3 — peso inicial (kg)
-  freteComissaoCab: number;       // B4 — R$/cab
-  qtdCabecas: number;             // B8
+  precoCompraArroba: number;
+  pesoCompraKg: number;
+  freteComissaoCab: number;
+  qtdCabecas: number;
 
-  // Sistema produtivo
-  areaHa: number;                 // B12
-  gmd: number;                    // B14 — kg/dia
-  periodoDias: number;            // B15
-  mortalidadePct: number;         // B17 — 0..1
-  rendimentoCarcacaPct: number;   // B18 — 0..1
+  // Fases de manejo
+  fases: Fase[];
 
-  // Suplementação
-  consumoSuplementoPctPV: number; // B25 — 0..1
-  precoSuplementoKg: number;      // B29
-
-  // Custos
-  salariosMensal: number;         // B33
-  sanidadeCab: number;            // B34
-  pastagemCabMes: number;         // B35
-  custosExtras: CustoExtra[];     // custos personalizados adicionados pelo usuário
+  // Custos operacionais gerais
+  salariosMensal: number;
+  sanidadeCab: number;
+  pastagemCabMes: number;
+  custosExtras: CustoExtra[];
 
   // Venda
-  taxasVendaCab: number;          // B44
-  precoVendaArroba: number;       // B45
+  taxasVendaCab: number;
+  precoVendaArroba: number;
+  rendimentoCarcacaPct: number;
 
   // Financiamento (opcional)
   financiamentoAtivo: boolean;
-  financiamentoTaxaAnualPct: number; // B58 — 0..1
-  financiamentoValorCaptado: number; // B59
+  financiamentoTaxaAnualPct: number;
+  financiamentoValorCaptado: number;
 }
 
-/** Os únicos três campos editáveis em variantes otimista/pessimista. */
+/** Em variantes: preço de compra/venda são globais; GMD é por fase (id → valor). */
 export interface VarianteOverride {
-  gmd: number;
   precoCompraArroba: number;
   precoVendaArroba: number;
+  gmdPorFase: Record<string, number>;
 }
 
 export type TipoVariante = "realista" | "otimista" | "pessimista";
+
+export interface FaseCalculada {
+  id: string;
+  nome: string;
+  dias: number;
+  areaHa: number;
+  gmd: number;
+  mortalidadePct: number;
+  confinamento: boolean;
+  pesoInicio: number;
+  pesoFim: number;
+  pesoMedio: number;
+  cabInicio: number;
+  cabFim: number;
+  cabMedia: number;
+  lotacaoMedia: number; // UA/ha (0 em confinamento)
+  lotacaoMediaCabHa: number; // cab/ha (0 em confinamento)
+  consumoSuplementoPctPV: number; // decimal 0..1
+  consumoMedioCabDia: number;
+  consumoTotalKg: number;
+  precoSuplementoKg: number;
+  custoSuplemento: number;
+  // distribuição proporcional de custos globais
+  custoSalariosFase: number;
+  custoPastagemFase: number;
+  custoSanidadeFase: number; // pontual — vai inteiro na fase 1
+  custosExtrasFase: number;
+  custoTotalFase: number;
+}
 
 export interface Outputs {
   // Compra
@@ -57,28 +92,32 @@ export interface Outputs {
   precoCompraFinalKg: number;
   custoCompraAnimaisTotal: number;
 
-  // Produção
+  // Produção agregada
+  diasTotal: number;
   pesoSaidaKg: number;
   pesoSaidaArroba: number;
+  gmdMedio: number;
+  cabFinal: number;
+  areaMaxima: number;
   lotacaoEntrada: number;
   lotacaoSaida: number;
   lotacaoMedia: number;
 
-  // Suplementação
-  consumoMedioCabDia: number;
-  consumoMedioLoteDia: number;
-  consumoTotalSuplementoKg: number;
-  custoDiarioSuplementoCab: number;
+  // Detalhamento por fase
+  fases: FaseCalculada[];
 
-  // Custos operacionais (detalhados)
+  // Suplementação agregada
+  consumoTotalSuplementoKg: number;
+  custoSuplementoTotal: number;
+
+  // Custos operacionais gerais (agregados)
   custoSalarios: number;
   custoSanidade: number;
   custoPastagem: number;
-  custoSuplementoTotal: number;
   custosExtrasTotal: number;
   custosExtrasDetalhado: { nome: string; valor: number }[];
   custoTaxasVenda: number;
-  custoOperacionalTotal: number;      // soma de tudo acima exceto taxas
+  custoOperacionalTotal: number;
   custoOperacionalCab: number;
   diariaOperacao: number;
   desembolsoCabMes: number;
