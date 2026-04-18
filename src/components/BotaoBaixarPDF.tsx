@@ -1,19 +1,11 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import type { InputsBase } from "@/lib/types";
 import type { CenarioPDF } from "./RelatorioPDF";
 
 const BOTAO_CLS =
-  "rounded-md bg-brand-800 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700";
-
-const RelatorioPDFLink = dynamic(() => import("./RelatorioPDFLink"), {
-  ssr: false,
-  loading: () => (
-    <span className={`${BOTAO_CLS} cursor-wait opacity-80`}>Carregando…</span>
-  ),
-});
+  "rounded-md bg-brand-800 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:cursor-wait disabled:opacity-80";
 
 interface Props {
   simNome: string;
@@ -32,32 +24,53 @@ function sanitizeFilename(nome: string): string {
 }
 
 export default function BotaoBaixarPDF({ simNome, inputs, cenarios }: Props) {
-  const [ativo, setAtivo] = useState(false);
+  const [gerando, setGerando] = useState(false);
 
   const fileName = useMemo(
     () => `relatorio_${sanitizeFilename(simNome)}.pdf`,
     [simNome]
   );
 
-  if (!ativo) {
-    return (
-      <button
-        type="button"
-        onClick={() => setAtivo(true)}
-        className={BOTAO_CLS}
-      >
-        Baixar PDF
-      </button>
-    );
+  async function baixar() {
+    if (gerando) return;
+    setGerando(true);
+    try {
+      const [{ pdf }, { default: RelatorioPDF }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("./RelatorioPDF"),
+      ]);
+      const blob = await pdf(
+        <RelatorioPDF
+          simNome={simNome}
+          inputs={inputs}
+          cenarios={cenarios}
+          dataGeracao={new Date()}
+        />
+      ).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Falha ao gerar PDF", e);
+      alert("Não foi possível gerar o PDF. Tente novamente.");
+    } finally {
+      setGerando(false);
+    }
   }
 
   return (
-    <RelatorioPDFLink
-      simNome={simNome}
-      inputs={inputs}
-      cenarios={cenarios}
-      fileName={fileName}
+    <button
+      type="button"
+      onClick={baixar}
+      disabled={gerando}
       className={BOTAO_CLS}
-    />
+    >
+      {gerando ? "Gerando PDF…" : "Baixar PDF"}
+    </button>
   );
 }
