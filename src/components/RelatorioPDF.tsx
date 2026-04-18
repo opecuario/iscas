@@ -2,10 +2,11 @@
 
 import {
   Document,
+  Image,
   Page,
+  StyleSheet,
   Text,
   View,
-  StyleSheet,
 } from "@react-pdf/renderer";
 import type {
   InputsBase,
@@ -30,7 +31,6 @@ const BRAND_100 = "#c4ddcd";
 const NEUTRAL_900 = "#171717";
 const NEUTRAL_700 = "#404040";
 const NEUTRAL_500 = "#737373";
-const NEUTRAL_300 = "#d4d4d4";
 const NEUTRAL_200 = "#e5e5e5";
 const NEUTRAL_100 = "#f5f5f5";
 const NEUTRAL_50 = "#fafafa";
@@ -40,52 +40,154 @@ const RED_700 = "#b91c1c";
 const NUM3 = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 });
 const fmtGmd = (v: number) => (isFinite(v) ? NUM3.format(v) : "—");
 
+function logoSrc(): string {
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}/logo.png`;
+  }
+  return "/logo.png";
+}
+
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 36,
+    paddingTop: 32,
     paddingBottom: 44,
     paddingHorizontal: 32,
     fontFamily: "Helvetica",
     fontSize: 9,
     color: NEUTRAL_900,
   },
+  // ---- Header padrão (páginas internas) ----
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
     paddingBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: NEUTRAL_200,
-    marginBottom: 12,
+    marginBottom: 14,
   },
-  brand: {
+  headerLogo: { width: 90, height: 13 },
+  headerMeta: { fontSize: 7, color: NEUTRAL_500, textAlign: "right" },
+  // ---- Capa ----
+  capaLogoWrap: {
+    alignItems: "center",
+    marginTop: 40,
+    marginBottom: 28,
+  },
+  capaLogo: { width: 280, height: 39.6 },
+  capaKicker: {
+    fontSize: 9,
+    color: NEUTRAL_500,
+    textAlign: "center",
+    letterSpacing: 2,
+    marginBottom: 6,
+  },
+  capaTitle: {
+    fontSize: 26,
+    fontFamily: "Helvetica-Bold",
+    color: BRAND_900,
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  capaMeta: {
+    fontSize: 11,
+    color: NEUTRAL_700,
+    textAlign: "center",
+    marginBottom: 28,
+  },
+  cardsRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 6,
+  },
+  card: {
+    flex: 1,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: NEUTRAL_200,
+    overflow: "hidden",
+    backgroundColor: "#ffffff",
+  },
+  cardHead: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  cardHeadLabel: {
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    color: "#ffffff",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  cardBody: { padding: 12 },
+  cardLucroLabel: {
+    fontSize: 8,
+    color: NEUTRAL_500,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  cardLucroValor: {
+    fontSize: 18,
+    fontFamily: "Helvetica-Bold",
+    marginBottom: 10,
+  },
+  kvGrid: {
+    flexDirection: "column",
+    gap: 6,
+  },
+  kvRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderTopWidth: 0.5,
+    borderTopColor: NEUTRAL_200,
+    paddingTop: 4,
+  },
+  kvLabel: { fontSize: 8.5, color: NEUTRAL_500 },
+  kvValor: {
+    fontSize: 9.5,
+    fontFamily: "Helvetica-Bold",
+    color: NEUTRAL_900,
+  },
+  capaCtaWrap: {
+    marginTop: 18,
+    padding: 12,
+    backgroundColor: BRAND_50,
+    borderRadius: 4,
+    borderLeftWidth: 3,
+    borderLeftColor: BRAND_800,
+  },
+  capaCtaTitle: {
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    color: BRAND_900,
+  },
+  capaCtaText: {
+    fontSize: 9,
+    color: NEUTRAL_700,
+    marginTop: 2,
+    lineHeight: 1.4,
+  },
+  capaCtaWhats: {
+    fontSize: 9.5,
+    fontFamily: "Helvetica-Bold",
+    color: BRAND_800,
+    marginTop: 4,
+  },
+  // ---- Tabela ----
+  simName: {
     fontSize: 14,
     fontFamily: "Helvetica-Bold",
     color: BRAND_900,
-    letterSpacing: 1,
-  },
-  brandSub: {
-    fontSize: 7,
-    color: NEUTRAL_500,
-    marginTop: 2,
-    letterSpacing: 0.5,
-  },
-  dataGeracao: {
-    fontSize: 7,
-    color: NEUTRAL_500,
-    textAlign: "right",
-  },
-  simName: {
-    fontSize: 16,
-    fontFamily: "Helvetica-Bold",
-    color: BRAND_900,
-    marginTop: 6,
     marginBottom: 2,
   },
   meta: {
     fontSize: 9,
     color: NEUTRAL_700,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 9,
@@ -95,34 +197,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: 6,
     marginTop: 4,
-  },
-  graficoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 5,
-  },
-  graficoLabel: {
-    width: 70,
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
-    color: BRAND_900,
-  },
-  graficoBarBg: {
-    flex: 1,
-    height: 10,
-    backgroundColor: NEUTRAL_100,
-    borderRadius: 2,
-    marginHorizontal: 8,
-  },
-  graficoBar: {
-    height: 10,
-    borderRadius: 2,
-  },
-  graficoValor: {
-    width: 90,
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
-    textAlign: "right",
   },
   tableWrap: {
     borderWidth: 1,
@@ -134,12 +208,10 @@ const styles = StyleSheet.create({
   tableHeaderRow: {
     flexDirection: "row",
     backgroundColor: NEUTRAL_50,
-    borderBottomWidth: 1,
-    borderBottomColor: NEUTRAL_200,
   },
   thIndicador: {
     flex: 2.4,
-    paddingVertical: 6,
+    paddingVertical: 8,
     paddingHorizontal: 8,
     fontSize: 7.5,
     fontFamily: "Helvetica-Bold",
@@ -149,13 +221,13 @@ const styles = StyleSheet.create({
   },
   thCenario: {
     flex: 1,
-    paddingVertical: 6,
+    paddingVertical: 8,
     paddingHorizontal: 8,
-    fontSize: 7.5,
+    fontSize: 8.5,
     fontFamily: "Helvetica-Bold",
-    color: NEUTRAL_500,
+    color: "#ffffff",
     textTransform: "uppercase",
-    letterSpacing: 0.4,
+    letterSpacing: 0.6,
   },
   sepRow: {
     flexDirection: "row",
@@ -262,31 +334,6 @@ const styles = StyleSheet.create({
     fontSize: 7,
     color: NEUTRAL_500,
   },
-  cta: {
-    marginTop: 8,
-    padding: 10,
-    backgroundColor: BRAND_50,
-    borderRadius: 3,
-    borderLeftWidth: 3,
-    borderLeftColor: BRAND_800,
-  },
-  ctaTitle: {
-    fontSize: 10,
-    fontFamily: "Helvetica-Bold",
-    color: BRAND_900,
-    marginBottom: 2,
-  },
-  ctaText: {
-    fontSize: 8.5,
-    color: NEUTRAL_700,
-    lineHeight: 1.4,
-  },
-  ctaWhats: {
-    fontSize: 8.5,
-    fontFamily: "Helvetica-Bold",
-    color: BRAND_800,
-    marginTop: 4,
-  },
 });
 
 interface Props {
@@ -303,10 +350,10 @@ export default function RelatorioPDF({
   dataGeracao,
 }: Props) {
   const out0 = cenarios[0].out;
-  const lucros = cenarios.map((c) => c.out.lucro);
-  const maxAbsLucro = Math.max(...lucros.map(Math.abs), 1);
   const temExtras = (inputs.custosExtras ?? []).length > 0;
   const temPasto = out0.areaMaxima > 0;
+  const logo = logoSrc();
+  const dataStr = dataGeracao.toLocaleDateString("pt-BR");
 
   return (
     <Document
@@ -314,48 +361,51 @@ export default function RelatorioPDF({
       author="O Pecuário"
       subject="Simulação de recria/engorda"
     >
+      {/* ======================= CAPA ======================= */}
       <Page size="A4" orientation="landscape" style={styles.page}>
-        <Header dataGeracao={dataGeracao} fixed />
+        <View style={styles.capaLogoWrap}>
+          <Image src={logo} style={styles.capaLogo} />
+        </View>
+
+        <Text style={styles.capaKicker}>RELATÓRIO DE SIMULAÇÃO</Text>
+        <Text style={styles.capaTitle}>{simNome}</Text>
+        <Text style={styles.capaMeta}>
+          {fmtInt(inputs.qtdCabecas || 0)} cabeças  ·  {fmtNum(out0.areaMaxima || 0)} ha
+          {"  ·  "}
+          {fmtInt(out0.diasTotal || 0)} dias
+        </Text>
+
+        <View style={styles.cardsRow}>
+          {cenarios.map((c) => (
+            <CenarioCard key={c.id} c={c} />
+          ))}
+        </View>
+
+        <View style={styles.capaCtaWrap} wrap={false}>
+          <Text style={styles.capaCtaTitle}>
+            Quer melhorar os resultados desta operação?
+          </Text>
+          <Text style={styles.capaCtaText}>
+            Nossa consultoria ajuda você a transformar esses cenários em decisões
+            concretas de manejo, nutrição e compra/venda para elevar o retorno.
+          </Text>
+          <Text style={styles.capaCtaWhats}>WhatsApp: (66) 9985-2419</Text>
+        </View>
+
+        <Footer dataStr={dataStr} fixed />
+      </Page>
+
+      {/* =================== PÁGINA DETALHADA =================== */}
+      <Page size="A4" orientation="landscape" style={styles.page}>
+        <Header logo={logo} dataStr={dataStr} fixed />
 
         <Text style={styles.simName}>{simNome}</Text>
         <Text style={styles.meta}>
-          {inputs.qtdCabecas || 0} cabeças · {out0.areaMaxima || 0} ha ·{" "}
-          {out0.diasTotal || 0} dias
+          {fmtInt(inputs.qtdCabecas || 0)} cabeças · {fmtNum(out0.areaMaxima || 0)} ha ·{" "}
+          {fmtInt(out0.diasTotal || 0)} dias
         </Text>
 
-        <Text style={styles.sectionTitle}>Comparativo de lucro total</Text>
-        <View style={{ marginBottom: 12 }}>
-          {cenarios.map((c) => {
-            const lucro = c.out.lucro;
-            const pct = (Math.abs(lucro) / maxAbsLucro) * 100;
-            const positivo = lucro >= 0;
-            return (
-              <View key={c.id} style={styles.graficoRow}>
-                <Text style={styles.graficoLabel}>{c.label}</Text>
-                <View style={styles.graficoBarBg}>
-                  <View
-                    style={[
-                      styles.graficoBar,
-                      {
-                        width: `${pct}%`,
-                        backgroundColor: positivo ? c.corHex : RED_700,
-                      },
-                    ]}
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.graficoValor,
-                    { color: positivo ? EMERALD_700 : RED_700 },
-                  ]}
-                >
-                  {fmtBRL(lucro)}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
-
+        <Text style={styles.sectionTitle}>Detalhamento comparativo</Text>
         <View style={styles.tableWrap}>
           <TableHeader cenarios={cenarios} fixed />
 
@@ -384,20 +434,12 @@ export default function RelatorioPDF({
           <SeparadorRow label="Resumo do gado" />
           <DataRow label="Cabeças compradas">
             {cenarios.map((c) => (
-              <ValorCell
-                key={c.id}
-                texto={fmtInt(inputs.qtdCabecas)}
-                unidade="cab"
-              />
+              <ValorCell key={c.id} texto={fmtInt(inputs.qtdCabecas)} unidade="cab" />
             ))}
           </DataRow>
           <DataRow label="Cabeças vendidas">
             {cenarios.map((c) => (
-              <ValorCell
-                key={c.id}
-                texto={fmtInt(c.out.cabFinal)}
-                unidade="cab"
-              />
+              <ValorCell key={c.id} texto={fmtInt(c.out.cabFinal)} unidade="cab" />
             ))}
           </DataRow>
           {cenarios.some((c) => inputs.qtdCabecas - c.out.cabFinal > 0.5) && (
@@ -427,38 +469,24 @@ export default function RelatorioPDF({
           )}
           <DataRow label="Peso de entrada">
             {cenarios.map((c) => (
-              <ValorCell
-                key={c.id}
-                texto={fmtInt(inputs.pesoCompraKg)}
-                unidade="kg"
-              />
+              <ValorCell key={c.id} texto={fmtInt(inputs.pesoCompraKg)} unidade="kg" />
             ))}
           </DataRow>
           <DataRow label="Peso de saída">
             {cenarios.map((c) => (
-              <ValorCell
-                key={c.id}
-                texto={fmtInt(c.out.pesoSaidaKg)}
-                unidade="kg"
-              />
+              <ValorCell key={c.id} texto={fmtInt(c.out.pesoSaidaKg)} unidade="kg" />
             ))}
           </DataRow>
           <DataRow label="Peso de saída (carcaça)">
             {cenarios.map((c) => (
-              <ValorCell
-                key={c.id}
-                texto={fmtNum(c.out.pesoSaidaArroba)}
-                unidade="@"
-              />
+              <ValorCell key={c.id} texto={fmtNum(c.out.pesoSaidaArroba)} unidade="@" />
             ))}
           </DataRow>
           <DataRow label="Arrobas compradas">
             {cenarios.map((c) => (
               <ValorCell
                 key={c.id}
-                texto={fmtNum(
-                  (inputs.qtdCabecas * inputs.pesoCompraKg) / 30
-                )}
+                texto={fmtNum((inputs.qtdCabecas * inputs.pesoCompraKg) / 30)}
                 unidade="@"
               />
             ))}
@@ -474,22 +502,14 @@ export default function RelatorioPDF({
           </DataRow>
           <DataRow label="Período total">
             {cenarios.map((c) => (
-              <ValorCell
-                key={c.id}
-                texto={fmtInt(c.out.diasTotal)}
-                unidade="dias"
-              />
+              <ValorCell key={c.id} texto={fmtInt(c.out.diasTotal)} unidade="dias" />
             ))}
           </DataRow>
           {temPasto && (
             <>
               <DataRow label="Área total (pasto)">
                 {cenarios.map((c) => (
-                  <ValorCell
-                    key={c.id}
-                    texto={fmtNum(c.out.areaMaxima)}
-                    unidade="ha"
-                  />
+                  <ValorCell key={c.id} texto={fmtNum(c.out.areaMaxima)} unidade="ha" />
                 ))}
               </DataRow>
               <DataRow label="Lotação de entrada">
@@ -530,10 +550,7 @@ export default function RelatorioPDF({
           </DataRow>
           <DataRow label="Suplemento (total das fases)">
             {cenarios.map((c) => (
-              <ValorCell
-                key={c.id}
-                texto={fmtBRL(c.out.custoSuplementoTotal)}
-              />
+              <ValorCell key={c.id} texto={fmtBRL(c.out.custoSuplementoTotal)} />
             ))}
           </DataRow>
           <DataRow label="Operacionais (salários + sanidade + pastagem + taxas)">
@@ -553,10 +570,7 @@ export default function RelatorioPDF({
             <>
               <DataRow label="Custos personalizados">
                 {cenarios.map((c) => (
-                  <ValorCell
-                    key={c.id}
-                    texto={fmtBRL(c.out.custosExtrasTotal)}
-                  />
+                  <ValorCell key={c.id} texto={fmtBRL(c.out.custosExtrasTotal)} />
                 ))}
               </DataRow>
               {cenarios[0].out.custosExtrasDetalhado.map((c, i) => (
@@ -568,9 +582,7 @@ export default function RelatorioPDF({
                   {cenarios.map((cc) => (
                     <ValorCell
                       key={cc.id}
-                      texto={fmtBRL(
-                        cc.out.custosExtrasDetalhado[i]?.valor ?? 0
-                      )}
+                      texto={fmtBRL(cc.out.custosExtrasDetalhado[i]?.valor ?? 0)}
                       indentada
                     />
                   ))}
@@ -618,73 +630,102 @@ export default function RelatorioPDF({
           </DataRow>
           <DataRow label="Rentabilidade da operação">
             {cenarios.map((c) => (
-              <ValorCell
-                key={c.id}
-                texto={fmtPct(c.out.rentabilidadeOperacao)}
-              />
+              <ValorCell key={c.id} texto={fmtPct(c.out.rentabilidadeOperacao)} />
             ))}
           </DataRow>
           <DataRow label="Rentabilidade anual">
             {cenarios.map((c) => (
-              <ValorCell
-                key={c.id}
-                texto={fmtPct(c.out.rentabilidadeAno)}
-              />
+              <ValorCell key={c.id} texto={fmtPct(c.out.rentabilidadeAno)} />
             ))}
           </DataRow>
           <DataRow label="Custo da @ produzida">
             {cenarios.map((c) => (
-              <ValorCell
-                key={c.id}
-                texto={fmtBRL(c.out.custoArrobaProduzida)}
-              />
+              <ValorCell key={c.id} texto={fmtBRL(c.out.custoArrobaProduzida)} />
             ))}
           </DataRow>
         </View>
 
-        <View style={styles.cta} wrap={false}>
-          <Text style={styles.ctaTitle}>
-            Quer melhorar os resultados desta operação?
-          </Text>
-          <Text style={styles.ctaText}>
-            Nossa consultoria ajuda você a transformar esses cenários em decisões
-            concretas de manejo, nutrição e compra/venda para elevar o retorno.
-          </Text>
-          <Text style={styles.ctaWhats}>
-            WhatsApp: (66) 9985-2419
-          </Text>
-        </View>
-
-        <Footer fixed />
+        <Footer dataStr={dataStr} fixed />
       </Page>
     </Document>
   );
 }
 
-function Header({
-  dataGeracao,
-  fixed,
-}: {
-  dataGeracao: Date;
-  fixed?: boolean;
-}) {
+function CenarioCard({ c }: { c: CenarioPDF }) {
+  const positivo = c.out.lucro >= 0;
   return (
-    <View style={styles.header} fixed={fixed}>
-      <View>
-        <Text style={styles.brand}>O PECUÁRIO</Text>
-        <Text style={styles.brandSub}>SIMULADOR DE RECRIA E ENGORDA</Text>
+    <View style={styles.card} wrap={false}>
+      <View style={[styles.cardHead, { backgroundColor: c.corHex }]}>
+        <Text style={styles.cardHeadLabel}>{c.label}</Text>
       </View>
-      <Text style={styles.dataGeracao}>
-        Gerado em {dataGeracao.toLocaleDateString("pt-BR")}
-      </Text>
+      <View style={styles.cardBody}>
+        <Text style={styles.cardLucroLabel}>Lucro total</Text>
+        <Text
+          style={[
+            styles.cardLucroValor,
+            { color: positivo ? EMERALD_700 : RED_700 },
+          ]}
+        >
+          {fmtBRL(c.out.lucro)}
+        </Text>
+        <View style={styles.kvGrid}>
+          <View style={styles.kvRow}>
+            <Text style={styles.kvLabel}>Lucro / cabeça</Text>
+            <Text style={styles.kvValor}>{fmtBRL(c.out.lucroCab)}</Text>
+          </View>
+          <View style={styles.kvRow}>
+            <Text style={styles.kvLabel}>Rentabilidade anual</Text>
+            <Text style={styles.kvValor}>{fmtPct(c.out.rentabilidadeAno)}</Text>
+          </View>
+          <View style={styles.kvRow}>
+            <Text style={styles.kvLabel}>@ produzidas</Text>
+            <Text style={styles.kvValor}>
+              {fmtNum(c.out.arrobasProduzidasTotal)}
+            </Text>
+          </View>
+          <View style={styles.kvRow}>
+            <Text style={styles.kvLabel}>Custo da @ produzida</Text>
+            <Text style={styles.kvValor}>
+              {fmtBRL(c.out.custoArrobaProduzida)}
+            </Text>
+          </View>
+          <View style={styles.kvRow}>
+            <Text style={styles.kvLabel}>Total desembolsado</Text>
+            <Text style={styles.kvValor}>{fmtBRL(c.out.totalDesembolsado)}</Text>
+          </View>
+        </View>
+      </View>
     </View>
   );
 }
 
-function Footer({ fixed }: { fixed?: boolean }) {
+function Header({
+  logo,
+  dataStr,
+  fixed,
+}: {
+  logo: string;
+  dataStr: string;
+  fixed?: boolean;
+}) {
+  return (
+    <View style={styles.header} fixed={fixed}>
+      <Image src={logo} style={styles.headerLogo} />
+      <Text style={styles.headerMeta}>Gerado em {dataStr}</Text>
+    </View>
+  );
+}
+
+function Footer({
+  dataStr,
+  fixed,
+}: {
+  dataStr: string;
+  fixed?: boolean;
+}) {
   return (
     <View style={styles.footer} fixed={fixed}>
-      <Text>opecuario.com.br</Text>
+      <Text>opecuario.com.br · {dataStr}</Text>
       <Text
         render={({ pageNumber, totalPages }) =>
           `Página ${pageNumber} de ${totalPages}`
@@ -705,7 +746,10 @@ function TableHeader({
     <View style={styles.tableHeaderRow} fixed={fixed}>
       <Text style={styles.thIndicador}>Indicador</Text>
       {cenarios.map((c) => (
-        <Text key={c.id} style={styles.thCenario}>
+        <Text
+          key={c.id}
+          style={[styles.thCenario, { backgroundColor: c.corHex }]}
+        >
           {c.label}
         </Text>
       ))}
