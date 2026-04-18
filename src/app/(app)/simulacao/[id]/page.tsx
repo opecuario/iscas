@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { calcular } from "@/lib/calculations";
 import { fmtBRL, fmtInt, fmtNum, fmtPct } from "@/lib/format";
+import BotaoBaixarPDF from "@/components/BotaoBaixarPDF";
+import type { CenarioPDF } from "@/components/RelatorioPDF";
 
 const NUM3 = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 });
 const fmtGmd = (v: number) => (isFinite(v) ? NUM3.format(v) : "—");
@@ -138,6 +140,19 @@ export default function SimulacaoResumo() {
   const lucros = cenarios.map((c) => c.out.lucro);
   const maxAbs = Math.max(...lucros.map(Math.abs), 1);
 
+  const CORES_PDF: Record<TipoVariante, string> = {
+    realista: "#063d1f",
+    otimista: "#047857",
+    pessimista: "#b45309",
+  };
+  const cenariosPDF: CenarioPDF[] = cenarios.map((c) => ({
+    id: c.id,
+    label: c.label,
+    corHex: CORES_PDF[c.id],
+    override: c.override,
+    out: c.out,
+  }));
+
   async function excluir() {
     if (!confirm("Tem certeza que deseja excluir esta simulação?")) return;
     await deleteSimulacao(id);
@@ -161,7 +176,12 @@ export default function SimulacaoResumo() {
             {cenarios[0]?.out.diasTotal || 0} dias
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <BotaoBaixarPDF
+            simNome={sim.nome}
+            inputs={sim.inputs}
+            cenarios={cenariosPDF}
+          />
           <Link
             href={`/nova?id=${sim.id}&etapa=realista`}
             className="rounded-md border border-brand-800 bg-white px-4 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-50"
