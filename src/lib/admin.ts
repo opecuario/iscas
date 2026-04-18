@@ -9,6 +9,7 @@ import {
   type Usuario,
 } from "./storage";
 
+
 export const ADMIN_EMAILS = ["opecuario@opecuario.com.br"];
 
 export function isAdmin(usuario: Usuario | null): boolean {
@@ -29,40 +30,19 @@ export interface SimulacaoComDono extends SimulacaoSalva {
   donoNome: string;
 }
 
-type JoinedRow = {
-  id: string;
-  usuario_id: string;
-  nome: string;
-  tipo: string;
-  etapa_atual: string;
-  inputs: SimulacaoSalva["inputs"];
-  otimista: SimulacaoSalva["otimista"];
-  pessimista: SimulacaoSalva["pessimista"];
-  created_at: string;
-  updated_at: string;
-  usuarios: { nome: string; email: string } | null;
-};
-
 export async function adminListSimulacoes(): Promise<SimulacaoComDono[]> {
-  const { data, error } = await supabase
-    .from("simulacoes")
-    .select("*, usuarios(nome, email)")
-    .order("updated_at", { ascending: false });
-  if (error || !data) return [];
-  return (data as JoinedRow[]).map((r) => ({
-    id: r.id,
-    usuarioId: r.usuario_id,
-    nome: r.nome,
-    tipo: "recria_engorda",
-    etapaAtual: r.etapa_atual as SimulacaoSalva["etapaAtual"],
-    inputs: r.inputs,
-    otimista: r.otimista,
-    pessimista: r.pessimista,
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-    donoEmail: r.usuarios?.email ?? "",
-    donoNome: r.usuarios?.nome ?? "—",
-  }));
+  // Usa listSimulacoes (que aplica migracao de shape antigo) + join em memoria
+  // com a lista de usuarios. Evita passar inputs crus para calcular().
+  const [sims, usuarios] = await Promise.all([listSimulacoes(), listUsuarios()]);
+  const porId = new Map(usuarios.map((u) => [u.id, u]));
+  return sims.map((s) => {
+    const dono = porId.get(s.usuarioId);
+    return {
+      ...s,
+      donoEmail: dono?.email ?? "",
+      donoNome: dono?.nome ?? "—",
+    };
+  });
 }
 
 export async function adminListSimulacoesPorUsuario(
