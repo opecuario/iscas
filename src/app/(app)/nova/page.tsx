@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SimuladorForm from "@/components/SimuladorForm";
 import ResultadosPainel from "@/components/ResultadosPainel";
@@ -96,6 +96,8 @@ function NovaPage() {
   const [variante, setVariante] = useState<TipoVariante>("realista");
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [erroNome, setErroNome] = useState(false);
+  const nomeInputRef = useRef<HTMLInputElement>(null);
 
   // Carrega ou inicializa
   useEffect(() => {
@@ -165,9 +167,16 @@ function NovaPage() {
 
   async function salvar(finalizar: boolean) {
     setErro(null);
+    setErroNome(false);
     const nomeTrim = nome.trim();
     if (!nomeTrim) {
+      setErroNome(true);
       setErro("Dê um nome para a simulação antes de salvar.");
+      nomeInputRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      setTimeout(() => nomeInputRef.current?.focus(), 300);
       return;
     }
     const usuarioAtual = await getUsuario();
@@ -248,16 +257,35 @@ function NovaPage() {
       <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="flex-1">
           <label className="block">
-            <span className="mb-1 block text-xs font-medium text-neutral-500">
+            <span className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-brand-900">
               Nome da simulação
+              <span className="text-red-600">*</span>
+              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                obrigatório
+              </span>
             </span>
             <input
+              ref={nomeInputRef}
               type="text"
               value={nome}
-              onChange={(e) => setNome(e.target.value)}
+              onChange={(e) => {
+                setNome(e.target.value);
+                if (erroNome && e.target.value.trim()) setErroNome(false);
+              }}
               placeholder="Ex.: Fazenda São João — safra 26"
-              className="w-full max-w-lg rounded-md border border-neutral-300 bg-white px-3 py-2 text-base font-semibold text-brand-900 outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600"
+              aria-invalid={erroNome}
+              className={`w-full max-w-lg rounded-md border bg-white px-3 py-2.5 text-base font-semibold text-brand-900 outline-none transition focus:ring-2 ${
+                erroNome
+                  ? "border-red-500 ring-2 ring-red-200 focus:border-red-600 focus:ring-red-300"
+                  : "border-brand-300 focus:border-brand-600 focus:ring-brand-200"
+              }`}
             />
+            {erroNome && (
+              <span className="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-700">
+                <span aria-hidden>⚠</span>
+                Dê um nome para a simulação antes de salvar.
+              </span>
+            )}
           </label>
         </div>
         <ProgressoEtapas atual={variante} onIr={setVariante} />

@@ -172,6 +172,15 @@ export default function SimuladorForm({ base, setBase, variante, override, setOv
             );
           })}
         </div>
+        {!emVariante && (
+          <button
+            type="button"
+            onClick={adicionarFase}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-md border-2 border-dashed border-brand-300 bg-brand-50/40 px-4 py-3 text-sm font-semibold text-brand-800 transition hover:border-brand-600 hover:bg-brand-50"
+          >
+            + Adicionar fase
+          </button>
+        )}
       </Secao>
 
       {/* Bloco 3 — Custos operacionais */}
