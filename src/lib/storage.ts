@@ -24,6 +24,7 @@ export interface SimulacaoSalva {
   inputs: InputsBase;
   otimista: VarianteOverride | null;
   pessimista: VarianteOverride | null;
+  observacoes?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -68,6 +69,12 @@ type InputsAntigo = {
   consumoSuplementoPctPV?: number;
   precoSuplementoKg?: number;
 };
+
+function extrairObservacoes(raw: unknown): string | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const v = (raw as Record<string, unknown>).__observacoes;
+  return typeof v === "string" && v.trim() ? v : undefined;
+}
 
 function migrarInputs(raw: unknown): InputsBase {
   const r = (raw ?? {}) as Partial<InputsBase> & InputsAntigo & Record<string, unknown>;
@@ -155,6 +162,7 @@ function mapSimulacao(row: SimulacaoRow): SimulacaoSalva {
     inputs,
     otimista: migrarVariante(row.otimista, inputs.fases),
     pessimista: migrarVariante(row.pessimista, inputs.fases),
+    observacoes: extrairObservacoes(row.inputs),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -300,19 +308,39 @@ export async function getSimulacao(id: string): Promise<SimulacaoSalva | null> {
 }
 
 export async function upsertSimulacao(s: SimulacaoSalva): Promise<AuthResultado> {
+  const inputsComMeta = s.observacoes?.trim()
+    ? { ...s.inputs, __observacoes: s.observacoes.trim() }
+    : s.inputs;
   const row = {
     id: s.id,
     usuario_id: s.usuarioId,
     nome: s.nome,
     tipo: s.tipo,
     etapa_atual: s.etapaAtual,
-    inputs: s.inputs,
+    inputs: inputsComMeta,
     otimista: s.otimista,
     pessimista: s.pessimista,
   };
   const { error } = await supabase.from("simulacoes").upsert(row);
   if (error) return { ok: false, erro: error.message };
   return { ok: true };
+}
+
+export async function duplicarSimulacao(id: string): Promise<AuthResultado & { novoId?: string }> {
+  const original = await getSimulacao(id);
+  if (!original) return { ok: false, erro: "Simulação não encontrada." };
+  const novoId = gerarId();
+  const agora = new Date().toISOString();
+  const copia: SimulacaoSalva = {
+    ...original,
+    id: novoId,
+    nome: `${original.nome} (cópia)`,
+    createdAt: agora,
+    updatedAt: agora,
+  };
+  const res = await upsertSimulacao(copia);
+  if (!res.ok) return res;
+  return { ok: true, novoId };
 }
 
 export async function deleteSimulacao(id: string): Promise<void> {

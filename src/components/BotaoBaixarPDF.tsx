@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { InputsBase } from "@/lib/types";
 import type { CenarioPDF } from "./RelatorioPDF";
+import { useToast } from "./ToastProvider";
 
 const BOTAO_CLS =
   "rounded-md bg-brand-800 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:cursor-wait disabled:opacity-80";
@@ -25,6 +26,7 @@ function sanitizeFilename(nome: string): string {
 
 export default function BotaoBaixarPDF({ simNome, inputs, cenarios }: Props) {
   const [gerando, setGerando] = useState(false);
+  const toast = useToast();
 
   const fileName = useMemo(
     () => `relatorio_${sanitizeFilename(simNome)}.pdf`,
@@ -60,7 +62,7 @@ export default function BotaoBaixarPDF({ simNome, inputs, cenarios }: Props) {
       }, 2000);
     } catch (e) {
       console.error("Falha ao gerar PDF", e);
-      alert("Não foi possível gerar o PDF. Tente novamente.");
+      toast.erro("Não foi possível gerar o PDF. Tente novamente.");
     } finally {
       setGerando(false);
     }

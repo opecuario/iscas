@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { Alerta } from "@/lib/validacoes";
 
 interface Props {
@@ -91,6 +91,7 @@ export default function CampoNumero(props: Props) {
   const [focused, setFocused] = useState(false);
   const [texto, setTexto] = useState<string>(() => formatarExibicao(value, props));
   const inputRef = useRef<HTMLInputElement>(null);
+  const descId = useId();
 
   // Reage a mudanças externas no value (ex.: mudança de variante) enquanto não está em foco.
   useEffect(() => {
@@ -151,6 +152,8 @@ export default function CampoNumero(props: Props) {
           inputMode="decimal"
           value={texto}
           disabled={bloqueado}
+          aria-invalid={alerta?.nivel === "vermelho"}
+          aria-describedby={alerta || dica ? descId : undefined}
           onFocus={handleFocus}
           onBlur={handleBlur}
           onChange={handleChange}
@@ -170,6 +173,8 @@ export default function CampoNumero(props: Props) {
 
       {alerta && (
         <span
+          id={descId}
+          role={alerta.nivel === "vermelho" ? "alert" : undefined}
           className={`mt-1 flex items-start gap-1 text-[11px] font-medium leading-snug ${
             alerta.nivel === "vermelho" ? "text-red-700" : "text-amber-800"
           }`}
@@ -179,7 +184,9 @@ export default function CampoNumero(props: Props) {
         </span>
       )}
       {dica && !alerta && (
-        <span className="mt-1 block text-[11px] leading-snug text-neutral-500">{dica}</span>
+        <span id={descId} className="mt-1 block text-[11px] leading-snug text-neutral-500">
+          {dica}
+        </span>
       )}
     </label>
   );

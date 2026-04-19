@@ -11,6 +11,7 @@ import {
   type SimulacaoSalva,
 } from "@/lib/storage";
 import { useUsuario } from "./UsuarioProvider";
+import { useToast } from "./ToastProvider";
 import { isAdmin } from "@/lib/admin";
 
 const ETAPA_LABEL: Record<SimulacaoSalva["etapaAtual"], string> = {
@@ -22,6 +23,7 @@ const ETAPA_LABEL: Record<SimulacaoSalva["etapaAtual"], string> = {
 
 export default function Sidebar() {
   const usuario = useUsuario();
+  const toast = useToast();
   const router = useRouter();
   const pathname = usePathname();
   const [simulacoes, setSimulacoes] = useState<SimulacaoSalva[]>([]);
@@ -77,7 +79,7 @@ export default function Sidebar() {
           onClick={(e) => {
             if (cheio) {
               e.preventDefault();
-              alert(
+              toast.erro(
                 `Você já atingiu o limite de ${LIMITE_SIMULACOES} simulações salvas. Exclua uma para criar outra.`
               );
             }
@@ -151,14 +153,6 @@ export default function Sidebar() {
           </ul>
         )}
 
-        <div className="mt-6 rounded-md border border-dashed border-neutral-300 bg-neutral-50 p-3">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
-            Em breve
-          </div>
-          <p className="mt-1 text-xs text-neutral-500">
-            Exportação em PDF, comparação lado a lado e mais simuladores.
-          </p>
-        </div>
       </div>
 
       <div className="border-t border-neutral-200 bg-neutral-50 p-4 text-xs">

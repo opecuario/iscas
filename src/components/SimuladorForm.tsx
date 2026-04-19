@@ -324,7 +324,7 @@ export default function SimuladorForm({
             value={base.rendimentoCarcacaPct}
             onChange={(v) => set("rendimentoCarcacaPct", v)}
             bloqueado={emVariante}
-            dica="Rendimento esperado após abate. Padrão 50%."
+            dica="Faixa usual 48%–54%. Padrão 50% — cruzamento industrial tende a 52-54%."
           />
         </div>
       </Secao>

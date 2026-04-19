@@ -20,6 +20,7 @@ const ROTAS_PUBLICAS = [
   "/esqueci-senha",
   "/redefinir-senha",
   "/privacidade",
+  "/publica",
 ];
 
 // Rotas que, se o usuário já estiver logado, redirecionam para o dashboard.

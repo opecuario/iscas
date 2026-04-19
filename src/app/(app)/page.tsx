@@ -1,35 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LIMITE_SIMULACOES,
   deleteSimulacao,
+  duplicarSimulacao,
   listSimulacoesDoUsuarioLogado,
   type SimulacaoSalva,
 } from "@/lib/storage";
 import { calcular } from "@/lib/calculations";
 import { fmtBRL, fmtPct } from "@/lib/format";
 import { useUsuario } from "@/components/UsuarioProvider";
-import type { InputsBase, VarianteOverride } from "@/lib/types";
-
-function varianteEfetiva(
-  base: InputsBase,
-  override: VarianteOverride | null
-): VarianteOverride | null {
-  if (!override) return null;
-  if (
-    override.precoCompraArroba !== base.precoCompraArroba ||
-    override.precoVendaArroba !== base.precoVendaArroba
-  ) {
-    return override;
-  }
-  for (const f of base.fases) {
-    const gmdOv = override.gmdPorFase?.[f.id];
-    if (gmdOv !== undefined && gmdOv !== f.gmd) return override;
-  }
-  return null;
-}
+import { useToast } from "@/components/ToastProvider";
+import { varianteEfetiva } from "@/lib/variantes";
+import type { InputsBase } from "@/lib/types";
 
 function areaTotalBase(base: InputsBase): number {
   return base.fases.reduce((m, f) => Math.max(m, f.areaHa), 0);
@@ -44,6 +30,8 @@ const ETAPA_LABEL: Record<SimulacaoSalva["etapaAtual"], string> = {
 
 export default function Dashboard() {
   const usuario = useUsuario();
+  const router = useRouter();
+  const toast = useToast();
   const [simulacoes, setSimulacoes] = useState<SimulacaoSalva[]>([]);
 
   useEffect(() => {
@@ -61,6 +49,21 @@ export default function Dashboard() {
     await deleteSimulacao(id);
     const sims = await listSimulacoesDoUsuarioLogado();
     setSimulacoes(sims);
+    toast.sucesso("Simulação excluída.");
+  }
+
+  async function duplicar(id: string) {
+    if (!ilimitadas && simulacoes.length >= LIMITE_SIMULACOES) {
+      toast.erro(`Limite de ${LIMITE_SIMULACOES} simulações atingido — exclua uma antes de duplicar.`);
+      return;
+    }
+    const res = await duplicarSimulacao(id);
+    if (!res.ok) {
+      toast.erro(res.erro);
+      return;
+    }
+    toast.sucesso("Cópia criada. Abrindo…");
+    if (res.novoId) router.push(`/nova?id=${res.novoId}`);
   }
 
   const ilimitadas = usuario?.simulacoesIlimitadas ?? false;
@@ -101,7 +104,12 @@ export default function Dashboard() {
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {simulacoes.map((s) => (
-            <CardSimulacao key={s.id} s={s} onDelete={() => excluir(s.id)} />
+            <CardSimulacao
+              key={s.id}
+              s={s}
+              onDelete={() => excluir(s.id)}
+              onDuplicate={() => duplicar(s.id)}
+            />
           ))}
           {cheio && <PaywallCard />}
         </div>
@@ -133,9 +141,11 @@ function EmptyState() {
 function CardSimulacao({
   s,
   onDelete,
+  onDuplicate,
 }: {
   s: SimulacaoSalva;
   onDelete: () => void;
+  onDuplicate: () => void;
 }) {
   const otimistaEfetivo = varianteEfetiva(s.inputs, s.otimista);
   const pessimistaEfetivo = varianteEfetiva(s.inputs, s.pessimista);
@@ -184,13 +194,25 @@ function CardSimulacao({
             </span>
           </div>
         </div>
-        <button
-          onClick={onDelete}
-          className="shrink-0 text-xs text-neutral-500 hover:text-red-600"
-          title="Excluir simulação"
-        >
-          Excluir
-        </button>
+        <div className="flex shrink-0 items-center gap-2 text-xs">
+          <button
+            onClick={onDuplicate}
+            className="text-neutral-500 hover:text-brand-800"
+            title="Duplicar simulação"
+          >
+            Duplicar
+          </button>
+          <span className="text-neutral-300" aria-hidden>
+            ·
+          </span>
+          <button
+            onClick={onDelete}
+            className="text-neutral-500 hover:text-red-600"
+            title="Excluir simulação"
+          >
+            Excluir
+          </button>
+        </div>
       </div>
 
       <div className={`mt-4 grid ${gridCols} gap-2`}>

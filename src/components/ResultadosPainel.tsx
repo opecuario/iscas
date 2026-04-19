@@ -2,6 +2,21 @@
 
 import type { InputsBase, Outputs } from "@/lib/types";
 import { fmtBRL, fmtInt, fmtNum, fmtPct } from "@/lib/format";
+import { BENCHMARKS, avaliar, rotuloBenchmark, type NivelBenchmark } from "@/lib/benchmarks";
+
+function TagBench({ nivel }: { nivel: NivelBenchmark }) {
+  const cls =
+    nivel === "bom"
+      ? "bg-emerald-100 text-emerald-800"
+      : nivel === "ruim"
+      ? "bg-red-100 text-red-800"
+      : "bg-neutral-200 text-neutral-700";
+  return (
+    <span className={`ml-2 rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${cls}`}>
+      {rotuloBenchmark(nivel)}
+    </span>
+  );
+}
 
 export default function ResultadosPainel({
   out,
@@ -12,8 +27,12 @@ export default function ResultadosPainel({
   cab: number;
   inputs: InputsBase;
 }) {
+  const rentNivel = avaliar(BENCHMARKS.rentabilidadeAno, out.rentabilidadeAno);
+  const arrobasNivel = avaliar(BENCHMARKS.arrobasPorHa, out.arrobasProduzidasHa);
+  const lotacaoNivel = avaliar(BENCHMARKS.lotacaoMedia, out.lotacaoMedia);
+  const gmdNivel = avaliar(BENCHMARKS.gmd, out.gmdMedio);
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" aria-live="polite">
       {/* Destaques */}
       <div className="grid grid-cols-2 gap-3">
         <Kpi titulo="Lucro total" valor={fmtBRL(out.lucro)} destaque={out.lucro >= 0 ? "positivo" : "negativo"} />
@@ -44,7 +63,11 @@ export default function ResultadosPainel({
           val={`${fmtInt(out.pesoSaidaKg)} kg (${fmtNum(out.pesoSaidaArroba)} @ carcaça)`}
         />
         <Linha label="Período total" val={`${fmtInt(out.diasTotal)} dias`} />
-        <Linha label="GMD médio" val={`${fmtNum(out.gmdMedio)} kg/dia`} />
+        <Linha
+          label="GMD médio"
+          val={`${fmtNum(out.gmdMedio)} kg/dia`}
+          tag={out.gmdMedio > 0 ? <TagBench nivel={gmdNivel} /> : undefined}
+        />
       </Grupo>
 
       {/* Detalhamento por fase */}
@@ -65,12 +88,24 @@ export default function ResultadosPainel({
         <Linha label="Custo da @ produzida" val={fmtBRL(out.custoArrobaProduzida)} />
         <Linha label="@ produzidas por cabeça" val={fmtNum(out.arrobasProduzidasCab)} />
         <Linha label="@ produzidas totais" val={fmtNum(out.arrobasProduzidasTotal)} />
-        <Linha label="@ produzidas por hectare" val={`${fmtNum(out.arrobasProduzidasHa)} (média BR ≈ 5,5)`} />
-        <Linha label="Lotação média (U.A./ha)" val={fmtNum(out.lotacaoMedia)} />
+        <Linha
+          label="@ produzidas por hectare"
+          val={`${fmtNum(out.arrobasProduzidasHa)} (média BR ≈ 5,5)`}
+          tag={out.arrobasProduzidasHa > 0 ? <TagBench nivel={arrobasNivel} /> : undefined}
+        />
+        <Linha
+          label="Lotação média (U.A./ha)"
+          val={fmtNum(out.lotacaoMedia)}
+          tag={out.lotacaoMedia > 0 ? <TagBench nivel={lotacaoNivel} /> : undefined}
+        />
         <Linha label="Lotação média (cab/ha)" val={fmtNum(out.lotacaoMediaCabHa)} />
         <Linha label="Rentabilidade da operação" val={fmtPct(out.rentabilidadeOperacao)} />
         <Linha label="Rentabilidade mensal" val={fmtPct(out.rentabilidadeMes)} />
-        <Linha label="Rentabilidade anual" val={fmtPct(out.rentabilidadeAno)} />
+        <Linha
+          label="Rentabilidade anual"
+          val={fmtPct(out.rentabilidadeAno)}
+          tag={<TagBench nivel={rentNivel} />}
+        />
       </Grupo>
     </div>
   );
@@ -240,11 +275,22 @@ function Grupo({
   );
 }
 
-function Linha({ label, val }: { label: string; val: string }) {
+function Linha({
+  label,
+  val,
+  tag,
+}: {
+  label: string;
+  val: string;
+  tag?: React.ReactNode;
+}) {
   return (
     <div className="flex items-center justify-between py-1.5">
       <dt className="text-neutral-600">{label}</dt>
-      <dd className="font-medium tabular-nums text-neutral-900">{val}</dd>
+      <dd className="flex items-center font-medium tabular-nums text-neutral-900">
+        <span>{val}</span>
+        {tag}
+      </dd>
     </div>
   );
 }

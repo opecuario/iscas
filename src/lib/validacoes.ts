@@ -39,7 +39,20 @@ export function alertaGmd(v: number): Alerta | null {
 }
 
 export function alertaMortalidade(decimal: number): Alerta | null {
-  if (!decimal || decimal <= 0) return null;
+  if (decimal === undefined || decimal === null) return null;
+  if (decimal >= 1) {
+    return {
+      nivel: "vermelho",
+      mensagem: "Mortalidade não pode ser 100% ou mais.",
+    };
+  }
+  if (decimal < 0) {
+    return {
+      nivel: "vermelho",
+      mensagem: "Mortalidade não pode ser negativa.",
+    };
+  }
+  if (decimal <= 0) return null;
   if (decimal > MORTALIDADE_RISCO) {
     return {
       nivel: "vermelho",

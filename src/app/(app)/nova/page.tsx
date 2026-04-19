@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import SimuladorForm from "@/components/SimuladorForm";
 import ResultadosPainel from "@/components/ResultadosPainel";
 import ConfirmacaoFinalModal from "@/components/ConfirmacaoFinalModal";
+import { useToast } from "@/components/ToastProvider";
 import { INPUTS_PADRAO, calcular } from "@/lib/calculations";
 import {
   LIMITE_SIMULACOES,
@@ -16,40 +17,12 @@ import {
   type EtapaAtual,
   type SimulacaoSalva,
 } from "@/lib/storage";
+import { snapshotBase as snapshotDoBase, varianteEfetiva as normalizarVariante } from "@/lib/variantes";
 import type {
   InputsBase,
   TipoVariante,
   VarianteOverride,
 } from "@/lib/types";
-
-function snapshotDoBase(base: InputsBase): VarianteOverride {
-  const gmdPorFase: Record<string, number> = {};
-  for (const f of base.fases) gmdPorFase[f.id] = f.gmd;
-  return {
-    precoCompraArroba: base.precoCompraArroba,
-    precoVendaArroba: base.precoVendaArroba,
-    gmdPorFase,
-  };
-}
-
-/** Se o override não diferir do base em nenhum campo, não tem cenário de fato. */
-function normalizarVariante(
-  base: InputsBase,
-  override: VarianteOverride | null
-): VarianteOverride | null {
-  if (!override) return null;
-  if (
-    override.precoCompraArroba !== base.precoCompraArroba ||
-    override.precoVendaArroba !== base.precoVendaArroba
-  ) {
-    return override;
-  }
-  for (const f of base.fases) {
-    const gmdOv = override.gmdPorFase?.[f.id];
-    if (gmdOv !== undefined && gmdOv !== f.gmd) return override;
-  }
-  return null;
-}
 
 /** Mescla o override sobre a base para exibi\u00e7\u00e3o (resumo/pain\u00e9is). */
 function aplicarOverrideEmInputs(
@@ -85,6 +58,7 @@ export default function NovaPageWrapper() {
 
 function NovaPage() {
   const router = useRouter();
+  const toast = useToast();
   const params = useSearchParams();
   const idParam = params.get("id");
   const etapaParam = params.get("etapa") as TipoVariante | null;
@@ -94,12 +68,15 @@ function NovaPage() {
   const [base, setBase] = useState<InputsBase>(INPUTS_PADRAO);
   const [otimista, setOtimista] = useState<VarianteOverride | null>(null);
   const [pessimista, setPessimista] = useState<VarianteOverride | null>(null);
+  const [observacoes, setObservacoes] = useState("");
   const [variante, setVariante] = useState<TipoVariante>("realista");
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [erroNome, setErroNome] = useState(false);
   const [validarObrigatorios, setValidarObrigatorios] = useState(false);
   const [confirmandoFinal, setConfirmandoFinal] = useState(false);
+  const [autoSalvando, setAutoSalvando] = useState(false);
+  const [ultimoAutoSave, setUltimoAutoSave] = useState<string | null>(null);
   const nomeInputRef = useRef<HTMLInputElement>(null);
   const refPrecoCompra = useRef<HTMLDivElement>(null);
   const refPesoCompra = useRef<HTMLDivElement>(null);
@@ -119,6 +96,7 @@ function NovaPage() {
           setBase(s.inputs);
           setOtimista(s.otimista);
           setPessimista(s.pessimista);
+          setObservacoes(s.observacoes ?? "");
           const etapa: TipoVariante =
             etapaParam && ORDEM.includes(etapaParam)
               ? etapaParam
@@ -167,6 +145,45 @@ function NovaPage() {
     () => aplicarOverrideEmInputs(base, override),
     [base, override]
   );
+
+  // Autosave: só ativa quando a simulação já foi salva pelo menos uma vez (tem id),
+  // e não roda durante carregamento. Debounce de 2s depois da última mudança.
+  useEffect(() => {
+    if (!id || carregando) return;
+    if (!nome.trim()) return;
+    const timer = setTimeout(async () => {
+      const usuarioAtual = await getUsuario();
+      if (!usuarioAtual) return;
+      const anterior = await getSimulacao(id);
+      if (!anterior) return;
+      setAutoSalvando(true);
+      const agora = new Date().toISOString();
+      const salva: SimulacaoSalva = {
+        id,
+        usuarioId: anterior.usuarioId,
+        nome: nome.trim(),
+        tipo: "recria_engorda",
+        etapaAtual: anterior.etapaAtual,
+        inputs: base,
+        otimista: normalizarVariante(
+          base,
+          variante === "otimista" ? otimista : anterior.otimista ?? otimista
+        ),
+        pessimista: normalizarVariante(
+          base,
+          variante === "pessimista" ? pessimista : anterior.pessimista ?? pessimista
+        ),
+        observacoes: observacoes.trim() || undefined,
+        createdAt: anterior.createdAt,
+        updatedAt: agora,
+      };
+      const res = await upsertSimulacao(salva);
+      setAutoSalvando(false);
+      if (res.ok) setUltimoAutoSave(agora);
+    }, 2000);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [base, otimista, pessimista, observacoes, nome, id, carregando]);
 
   function copiarDoRealista() {
     if (variante === "otimista") setOtimista(snapshotDoBase(base));
@@ -303,6 +320,7 @@ function NovaPage() {
           ? pessimista
           : anterior?.pessimista ?? pessimista
       ),
+      observacoes: observacoes.trim() || undefined,
       createdAt: anterior?.createdAt ?? agora,
       updatedAt: agora,
     };
@@ -315,8 +333,10 @@ function NovaPage() {
     setId(novoId);
 
     if (etapaNova === "finalizado") {
+      toast.sucesso("Simulação salva — abrindo resumo.");
       router.replace(`/simulacao/${novoId}`);
     } else {
+      toast.sucesso(`Cenário ${labelVariante(variante).toLowerCase()} salvo.`);
       router.replace(`/nova?id=${novoId}&etapa=${etapaNova}`);
       setVariante(etapaNova as TipoVariante);
     }
@@ -346,6 +366,12 @@ function NovaPage() {
               <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
                 obrigatório
               </span>
+              {id && (
+                <StatusAutoSave
+                  salvando={autoSalvando}
+                  ultimo={ultimoAutoSave}
+                />
+              )}
             </span>
             <input
               ref={nomeInputRef}
@@ -412,8 +438,35 @@ function NovaPage() {
         </aside>
       </div>
 
-      {/* Ações no rodapé */}
+      {/* Anotações */}
       <div className="mt-8 rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+        <label className="block">
+          <span className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-brand-900">
+            Anotações
+            <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-neutral-600">
+              opcional
+            </span>
+          </span>
+          <p className="mb-2 text-xs text-neutral-500">
+            Registre o contexto da simulação — premissas, comentários,
+            lembretes. Aparece no resumo final.
+          </p>
+          <textarea
+            value={observacoes}
+            onChange={(e) => setObservacoes(e.target.value)}
+            rows={4}
+            maxLength={1000}
+            placeholder="Ex.: chuva atrasada em janeiro, projeção considera compra parcelada em 3×..."
+            className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-brand-900 outline-none transition focus:border-brand-600 focus:ring-1 focus:ring-brand-600"
+          />
+          <div className="mt-1 text-right text-[10px] text-neutral-400 tabular-nums">
+            {observacoes.length}/1000
+          </div>
+        </label>
+      </div>
+
+      {/* Ações no rodapé */}
+      <div className="mt-6 rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
         {erro && (
           <div className="mb-3 rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-800">
             {erro}
@@ -471,6 +524,33 @@ function NovaPage() {
 
 function labelVariante(v: TipoVariante): string {
   return v === "realista" ? "Realista" : v === "otimista" ? "Otimista" : "Pessimista";
+}
+
+function StatusAutoSave({
+  salvando,
+  ultimo,
+}: {
+  salvando: boolean;
+  ultimo: string | null;
+}) {
+  if (salvando) {
+    return (
+      <span className="ml-auto text-[10px] font-normal text-neutral-500">
+        Salvando…
+      </span>
+    );
+  }
+  if (!ultimo) return null;
+  const horaTexto = new Date(ultimo).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return (
+    <span className="ml-auto flex items-center gap-1 text-[10px] font-normal text-emerald-700">
+      <span aria-hidden>✓</span>
+      Salvo às {horaTexto}
+    </span>
+  );
 }
 
 function ProgressoEtapas({

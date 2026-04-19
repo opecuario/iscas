@@ -6,7 +6,17 @@ import { useEffect, useMemo, useState } from "react";
 import { calcular } from "@/lib/calculations";
 import { fmtBRL, fmtInt, fmtNum, fmtPct } from "@/lib/format";
 import { alertasResultado } from "@/lib/validacoes";
+import { snapshotBase, varianteEfetiva } from "@/lib/variantes";
+import {
+  analiseSensibilidade,
+  breakEvenPrecoVenda,
+  curvaLucro,
+  margemSegurancaVenda,
+} from "@/lib/analise";
+import { recomendacoes } from "@/lib/recomendacoes";
+import { BENCHMARKS, avaliar, corBenchmark, rotuloBenchmark } from "@/lib/benchmarks";
 import BotaoBaixarPDF from "@/components/BotaoBaixarPDF";
+import { useToast } from "@/components/ToastProvider";
 import type { CenarioPDF } from "@/components/RelatorioPDF";
 
 const NUM3 = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 });
@@ -17,7 +27,6 @@ import {
   type SimulacaoSalva,
 } from "@/lib/storage";
 import type {
-  InputsBase,
   Outputs,
   TipoVariante,
   VarianteOverride,
@@ -31,40 +40,14 @@ type CenarioAtivo = {
   out: Outputs;
 };
 
-function varianteEfetiva(
-  base: InputsBase,
-  override: VarianteOverride | null
-): VarianteOverride | null {
-  if (!override) return null;
-  if (
-    override.precoCompraArroba !== base.precoCompraArroba ||
-    override.precoVendaArroba !== base.precoVendaArroba
-  ) {
-    return override;
-  }
-  for (const f of base.fases) {
-    const gmdOv = override.gmdPorFase?.[f.id];
-    if (gmdOv !== undefined && gmdOv !== f.gmd) return override;
-  }
-  return null;
-}
-
-function snapshotBase(base: InputsBase): VarianteOverride {
-  const gmdPorFase: Record<string, number> = {};
-  for (const f of base.fases) gmdPorFase[f.id] = f.gmd;
-  return {
-    precoCompraArroba: base.precoCompraArroba,
-    precoVendaArroba: base.precoVendaArroba,
-    gmdPorFase,
-  };
-}
-
 export default function SimulacaoResumo() {
   const router = useRouter();
+  const toast = useToast();
   const { id } = useParams<{ id: string }>();
   const [sim, setSim] = useState<SimulacaoSalva | null>(null);
   const [naoEncontrada, setNaoEncontrada] = useState(false);
   const [cenarioMobile, setCenarioMobile] = useState<TipoVariante>("realista");
+  const [cenarioAnalise, setCenarioAnalise] = useState<TipoVariante>("realista");
 
   useEffect(() => {
     let ativo = true;
@@ -157,7 +140,35 @@ export default function SimulacaoResumo() {
   async function excluir() {
     if (!confirm("Tem certeza que deseja excluir esta simulação?")) return;
     await deleteSimulacao(id);
+    toast.sucesso("Simulação excluída.");
     router.replace("/");
+  }
+
+  async function compartilhar() {
+    if (!sim) return;
+    try {
+      const payload = {
+        v: 1,
+        n: sim.nome,
+        i: sim.inputs,
+        o: sim.otimista,
+        p: sim.pessimista,
+      };
+      const json = JSON.stringify(payload);
+      const utf8 = new TextEncoder().encode(json);
+      let bin = "";
+      utf8.forEach((b) => (bin += String.fromCharCode(b)));
+      const b64 = btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      const url = `${window.location.origin}/publica#${b64}`;
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        toast.sucesso("Link público copiado para a área de transferência.");
+      } else {
+        window.prompt("Copie o link público abaixo:", url);
+      }
+    } catch {
+      toast.erro("Não foi possível gerar o link. Tente novamente.");
+    }
   }
 
   return (
@@ -183,6 +194,12 @@ export default function SimulacaoResumo() {
             inputs={sim.inputs}
             cenarios={cenariosPDF}
           />
+          <button
+            onClick={compartilhar}
+            className="rounded-md border border-brand-800 bg-white px-4 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-50"
+          >
+            Compartilhar
+          </button>
           <Link
             href={`/nova?id=${sim.id}&etapa=realista`}
             className="rounded-md border border-brand-800 bg-white px-4 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-50"
@@ -274,11 +291,12 @@ export default function SimulacaoResumo() {
                       Lucro total
                     </div>
                     <div
-                      className={`mt-1 text-3xl font-bold tabular-nums ${
+                      className={`mt-1 flex items-center justify-center gap-1 text-3xl font-bold tabular-nums ${
                         lucroPos ? "text-emerald-700" : "text-red-700"
                       }`}
                     >
-                      {fmtBRL(c.out.lucro)}
+                      <span aria-hidden>{lucroPos ? "↑" : "↓"}</span>
+                      <span>{fmtBRL(c.out.lucro)}</span>
                     </div>
                   </div>
                   <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-neutral-100 pt-4 text-center">
@@ -758,6 +776,62 @@ export default function SimulacaoResumo() {
         </div>
       </section>
 
+      {/* Benchmarks */}
+      <BenchmarksSection cenarios={cenarios} inputs={sim.inputs} />
+
+      {/* Break-even + recomendações + sensibilidade + curva — selector por cenário */}
+      {cenarios.length > 1 && (
+        <div className="mt-8 flex flex-wrap gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+            Analisar cenário:
+          </span>
+          {cenarios.map((c) => {
+            const ativo = cenarioAnalise === c.id;
+            return (
+              <button
+                key={c.id}
+                onClick={() => setCenarioAnalise(c.id)}
+                className={`rounded-md px-3 py-1 text-xs font-semibold transition ${
+                  ativo ? `${c.cor} text-white` : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                }`}
+              >
+                {c.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <BreakEvenSection
+        cenario={
+          cenarios.find((c) => c.id === cenarioAnalise) ?? cenarios[0]
+        }
+      />
+      <RecomendacoesSection sim={sim} />
+      <SensibilidadeSection
+        sim={sim}
+        cenario={
+          cenarios.find((c) => c.id === cenarioAnalise) ?? cenarios[0]
+        }
+      />
+      <CurvaLucroSection
+        sim={sim}
+        cenario={
+          cenarios.find((c) => c.id === cenarioAnalise) ?? cenarios[0]
+        }
+      />
+
+      {sim.observacoes && (
+        <section className="mt-8 rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+            Anotações
+          </h2>
+          <p className="mt-2 whitespace-pre-wrap text-sm text-brand-900">
+            {sim.observacoes}
+          </p>
+        </section>
+      )}
+
       <footer className="mt-10 rounded-lg border border-brand-200 bg-brand-50 p-5 text-center">
         <h3 className="text-base font-semibold text-brand-900">
           Quer melhorar os resultados desta operação?
@@ -767,7 +841,7 @@ export default function SimulacaoResumo() {
           concretas de manejo, nutrição e compra/venda para elevar o retorno.
         </p>
         <a
-          href="https://wa.me/556699852419"
+          href={whatsappComContexto(sim, cenarios[0].out)}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-4 inline-block rounded-md bg-brand-800 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700"
@@ -843,6 +917,359 @@ function LinhaCen({
         );
       })}
     </tr>
+  );
+}
+
+function whatsappComContexto(sim: SimulacaoSalva, out: Outputs): string {
+  const base = "https://wa.me/556699852419";
+  const lucroStr = fmtBRL(out.lucro);
+  const rentStr = fmtPct(out.rentabilidadeAno);
+  const msg =
+    `Olá! Rodei a simulação "${sim.nome}" (${sim.inputs.qtdCabecas} cab). ` +
+    `No cenário realista deu ${lucroStr} de lucro (rent. ${rentStr} a.a.). ` +
+    `Queria conversar sobre como melhorar esses números.`;
+  return `${base}?text=${encodeURIComponent(msg)}`;
+}
+
+function BreakEvenSection({ cenario }: { cenario: CenarioAtivo }) {
+  const be = breakEvenPrecoVenda(cenario.out);
+  const margem = margemSegurancaVenda(cenario.out, cenario.override.precoVendaArroba);
+  const precoAtual = cenario.override.precoVendaArroba;
+  return (
+    <section className="mt-8 rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+        Ponto de equilíbrio — {cenario.label}
+      </h2>
+      <p className="mt-1 text-xs text-neutral-600">
+        A quantos R$/@ você pode vender sem sair no prejuízo, mantendo todo o
+        resto igual.
+      </p>
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="rounded-md border border-neutral-200 bg-neutral-50 p-4">
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-neutral-500">
+            Preço de equilíbrio
+          </div>
+          <div className="mt-1 text-2xl font-bold tabular-nums text-brand-900">
+            {fmtBRL(be)}
+            <span className="ml-1 text-xs font-normal text-neutral-500">/@</span>
+          </div>
+        </div>
+        <div className="rounded-md border border-neutral-200 bg-neutral-50 p-4">
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-neutral-500">
+            Preço de venda atual
+          </div>
+          <div className="mt-1 text-2xl font-bold tabular-nums text-brand-900">
+            {fmtBRL(precoAtual)}
+            <span className="ml-1 text-xs font-normal text-neutral-500">/@</span>
+          </div>
+        </div>
+        <div className="rounded-md border border-neutral-200 bg-neutral-50 p-4">
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-neutral-500">
+            Margem de segurança
+          </div>
+          <div
+            className={`mt-1 text-2xl font-bold tabular-nums ${
+              margem >= 0.1
+                ? "text-emerald-700"
+                : margem >= 0
+                ? "text-amber-700"
+                : "text-red-700"
+            }`}
+          >
+            {fmtPct(margem)}
+          </div>
+          <div className="mt-0.5 text-[11px] text-neutral-500">
+            Quanto o preço pode cair antes de zerar o lucro
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function RecomendacoesSection({ sim }: { sim: SimulacaoSalva }) {
+  const recs = useMemo(() => recomendacoes(sim.inputs), [sim.inputs]);
+  if (recs.length === 0) return null;
+  return (
+    <section className="mt-8 rounded-lg border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-emerald-800">
+        Onde concentrar esforços
+      </h2>
+      <p className="mt-1 text-xs text-emerald-900/80">
+        Ajustes pequenos, simulados em cima do seu cenário realista, com maior
+        impacto no resultado.
+      </p>
+      <ul className="mt-4 space-y-2">
+        {recs.map((r, i) => (
+          <li
+            key={i}
+            className="flex items-start gap-3 rounded-md border border-emerald-200 bg-white p-3"
+          >
+            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-[11px] font-bold text-white">
+              {i + 1}
+            </span>
+            <div className="flex-1 text-sm">
+              <div className="font-semibold text-brand-900">{r.titulo}</div>
+              <div className="mt-0.5 text-xs text-neutral-600">{r.descricao}</div>
+            </div>
+            <div className="shrink-0 text-right">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+                Ganho estimado
+              </div>
+              <div className="text-sm font-bold tabular-nums text-emerald-700">
+                +{fmtBRL(r.ganhoEstimado)}
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function SensibilidadeSection({
+  sim,
+  cenario,
+}: {
+  sim: SimulacaoSalva;
+  cenario: CenarioAtivo;
+}) {
+  const tabelas = useMemo(
+    () => analiseSensibilidade(sim.inputs, cenario.override),
+    [sim.inputs, cenario]
+  );
+  return (
+    <section className="mt-8 rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+        Sensibilidade do lucro — {cenario.label}
+      </h2>
+      <p className="mt-1 text-xs text-neutral-600">
+        Quanto o lucro muda se cada variável oscilar ±5% ou ±10%.
+      </p>
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+        {tabelas.map((t) => (
+          <div
+            key={t.variavel}
+            className="rounded-md border border-neutral-200 bg-neutral-50 p-3"
+          >
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-brand-800">
+              {t.rotulo}
+            </div>
+            <table className="mt-2 w-full text-xs">
+              <thead>
+                <tr className="text-neutral-500">
+                  <th className="py-1 text-left font-normal">Variação</th>
+                  <th className="py-1 text-right font-normal">Lucro</th>
+                  <th className="py-1 text-right font-normal">Δ</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-200">
+                {t.linhas.map((l) => {
+                  const zero = l.variacaoPct === 0;
+                  return (
+                    <tr key={l.variacaoPct} className={zero ? "font-semibold" : ""}>
+                      <td className="py-1 text-left tabular-nums">
+                        {l.variacaoPct > 0 ? "+" : ""}
+                        {(l.variacaoPct * 100).toFixed(0)}%
+                      </td>
+                      <td
+                        className={`py-1 text-right tabular-nums ${
+                          l.lucro >= 0 ? "text-brand-900" : "text-red-700"
+                        }`}
+                      >
+                        {fmtBRL(l.lucro)}
+                      </td>
+                      <td
+                        className={`py-1 text-right tabular-nums ${
+                          l.deltaLucro > 0
+                            ? "text-emerald-700"
+                            : l.deltaLucro < 0
+                            ? "text-red-700"
+                            : "text-neutral-400"
+                        }`}
+                      >
+                        {zero
+                          ? "—"
+                          : `${l.deltaLucro > 0 ? "+" : ""}${fmtBRL(l.deltaLucro)}`}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CurvaLucroSection({
+  sim,
+  cenario,
+}: {
+  sim: SimulacaoSalva;
+  cenario: CenarioAtivo;
+}) {
+  const pontos = useMemo(
+    () => curvaLucro(sim.inputs, cenario.override),
+    [sim.inputs, cenario]
+  );
+  if (pontos.length < 2) return null;
+  const W = 600;
+  const H = 200;
+  const pad = 24;
+  const maxDia = pontos[pontos.length - 1].dia || 1;
+  const valores = pontos.flatMap((p) => [p.valorRebanho, p.desembolsoAcumulado]);
+  const maxV = Math.max(...valores, 1);
+  const minV = Math.min(...valores, 0);
+  const rangeV = maxV - minV || 1;
+  const x = (d: number) => pad + ((d / maxDia) * (W - 2 * pad));
+  const y = (v: number) => H - pad - (((v - minV) / rangeV) * (H - 2 * pad));
+  const toPath = (pick: (p: (typeof pontos)[number]) => number) =>
+    pontos.map((p, i) => `${i === 0 ? "M" : "L"}${x(p.dia).toFixed(1)},${y(pick(p)).toFixed(1)}`).join(" ");
+  return (
+    <section className="mt-8 rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+        Curva patrimonial — {cenario.label}
+      </h2>
+      <p className="mt-1 text-xs text-neutral-600">
+        Como o valor do rebanho evolui ao longo das fases vs. o desembolso
+        acumulado. No fim da última fase é quando sai a venda.
+      </p>
+      <div className="mt-4 overflow-x-auto">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[500px]">
+          <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="#d4d4d4" />
+          <line x1={pad} y1={pad} x2={pad} y2={H - pad} stroke="#d4d4d4" />
+          {/* desembolso */}
+          <path d={toPath((p) => p.desembolsoAcumulado)} fill="none" stroke="#b45309" strokeWidth={2} />
+          {/* valor do rebanho */}
+          <path d={toPath((p) => p.valorRebanho)} fill="none" stroke="#047857" strokeWidth={2.5} />
+          {pontos.map((p, i) => (
+            <g key={i}>
+              <circle cx={x(p.dia)} cy={y(p.valorRebanho)} r={3} fill="#047857" />
+              <circle cx={x(p.dia)} cy={y(p.desembolsoAcumulado)} r={2.5} fill="#b45309" />
+              <text x={x(p.dia)} y={H - pad + 14} textAnchor="middle" fontSize={9} fill="#737373">
+                {p.dia === 0 ? "início" : `d${p.dia}`}
+              </text>
+            </g>
+          ))}
+        </svg>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-4 text-xs">
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-4 rounded" style={{ background: "#047857" }} />
+          Valor do rebanho
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-4 rounded" style={{ background: "#b45309" }} />
+          Desembolso acumulado
+        </span>
+      </div>
+    </section>
+  );
+}
+
+function BenchmarksSection({
+  cenarios,
+  inputs,
+}: {
+  cenarios: CenarioAtivo[];
+  inputs: SimulacaoSalva["inputs"];
+}) {
+  const realista = cenarios[0];
+  const mortalidade =
+    inputs.qtdCabecas > 0
+      ? (inputs.qtdCabecas - realista.out.cabFinal) / inputs.qtdCabecas
+      : 0;
+  const arrobasProduzidas =
+    realista.out.cabFinal * realista.out.pesoSaidaArroba -
+    (inputs.qtdCabecas * inputs.pesoCompraKg * inputs.rendimentoCarcacaPct) / 15;
+  const arrobasPorHa =
+    realista.out.areaMaxima > 0
+      ? arrobasProduzidas / realista.out.areaMaxima
+      : 0;
+  const gmdMedio =
+    inputs.fases.length > 0
+      ? inputs.fases.reduce((s, f) => s + f.gmd, 0) / inputs.fases.length
+      : 0;
+
+  const cards: Array<{
+    bench: typeof BENCHMARKS.gmd;
+    valor: number;
+    valorFmt: string;
+    inverso?: boolean;
+  }> = [];
+  if (realista.out.areaMaxima > 0) {
+    cards.push({
+      bench: BENCHMARKS.arrobasPorHa,
+      valor: arrobasPorHa,
+      valorFmt: `${fmtNum(arrobasPorHa)} @/ha`,
+    });
+  }
+  cards.push({
+    bench: BENCHMARKS.gmd,
+    valor: gmdMedio,
+    valorFmt: `${fmtGmd(gmdMedio)} kg/dia`,
+  });
+  cards.push({
+    bench: BENCHMARKS.mortalidade,
+    valor: mortalidade,
+    valorFmt: fmtPct(mortalidade),
+    inverso: true,
+  });
+  cards.push({
+    bench: BENCHMARKS.rentabilidadeAno,
+    valor: realista.out.rentabilidadeAno,
+    valorFmt: fmtPct(realista.out.rentabilidadeAno),
+  });
+  if (realista.out.areaMaxima > 0) {
+    cards.push({
+      bench: BENCHMARKS.lotacaoMedia,
+      valor: realista.out.lotacaoMedia,
+      valorFmt: `${fmtNum(realista.out.lotacaoMedia)} U.A./ha`,
+    });
+  }
+
+  return (
+    <section className="mt-8 rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+        Como você se compara — referências BR
+      </h2>
+      <p className="mt-1 text-xs text-neutral-600">
+        Comparação do cenário realista contra faixas médias do mercado
+        brasileiro. Não são regras rígidas — servem de baliza.
+      </p>
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {cards.map((c, i) => {
+          const nivel = avaliar(c.bench, c.valor, c.inverso);
+          return (
+            <div key={i} className="rounded-md border border-neutral-200 bg-neutral-50 p-3">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-brand-800">
+                {c.bench.rotulo}
+              </div>
+              <div className={`mt-1 text-lg font-bold tabular-nums ${corBenchmark(nivel)}`}>
+                {c.valorFmt}
+              </div>
+              <div
+                className={`mt-0.5 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                  nivel === "bom"
+                    ? "bg-emerald-100 text-emerald-800"
+                    : nivel === "ruim"
+                    ? "bg-red-100 text-red-800"
+                    : "bg-neutral-200 text-neutral-700"
+                }`}
+              >
+                {rotuloBenchmark(nivel)}
+              </div>
+              <div className="mt-1.5 text-[11px] text-neutral-500">
+                {c.bench.descricao}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
