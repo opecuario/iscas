@@ -48,6 +48,7 @@ interface Props {
   refPrecoCompra?: React.RefObject<HTMLDivElement | null>;
   refPesoCompra?: React.RefObject<HTMLDivElement | null>;
   refQtdCabecas?: React.RefObject<HTMLDivElement | null>;
+  refPrecoVenda?: React.RefObject<HTMLDivElement | null>;
 }
 
 export default function SimuladorForm({
@@ -61,6 +62,7 @@ export default function SimuladorForm({
   refPrecoCompra,
   refPesoCompra,
   refQtdCabecas,
+  refPrecoVenda,
 }: Props) {
   const emVariante = variante !== "realista";
   const set = <K extends keyof InputsBase>(k: K, v: InputsBase[K]) =>
@@ -207,6 +209,7 @@ export default function SimuladorForm({
                 calc={calc}
                 emVariante={emVariante}
                 gmdOverride={gmdOv}
+                validarObrigatorios={validarObrigatorios}
                 onChange={(patch) => setFase(idx, patch)}
                 onRemover={() => removerFase(idx)}
                 onGmdOverride={(v) => setGmdOverrideFase(f.id, v)}
@@ -283,23 +286,29 @@ export default function SimuladorForm({
         ]}
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <CampoNumero
-            label="Preço de venda"
-            unidade="R$/@"
-            moeda
-            value={emVariante ? override.precoVendaArroba : base.precoVendaArroba}
-            onChange={(v) =>
-              emVariante
-                ? setOverride({ ...override, precoVendaArroba: v })
-                : set("precoVendaArroba", v)
-            }
-            destacado
-            alerta={(() => {
-              const compra = emVariante ? override.precoCompraArroba : base.precoCompraArroba;
-              const venda = emVariante ? override.precoVendaArroba : base.precoVendaArroba;
-              return alertaPrecoArroba(venda, "venda") ?? alertaVendaMenorQueCompra(compra, venda);
-            })()}
-          />
+          <div ref={refPrecoVenda}>
+            <CampoNumero
+              label="Preço de venda"
+              unidade="R$/@"
+              moeda
+              value={emVariante ? override.precoVendaArroba : base.precoVendaArroba}
+              onChange={(v) =>
+                emVariante
+                  ? setOverride({ ...override, precoVendaArroba: v })
+                  : set("precoVendaArroba", v)
+              }
+              destacado
+              alerta={(() => {
+                const compra = emVariante ? override.precoCompraArroba : base.precoCompraArroba;
+                const venda = emVariante ? override.precoVendaArroba : base.precoVendaArroba;
+                if (validarObrigatorios) {
+                  const obrig = alertaObrigatorio(venda);
+                  if (obrig) return obrig;
+                }
+                return alertaPrecoArroba(venda, "venda") ?? alertaVendaMenorQueCompra(compra, venda);
+              })()}
+            />
+          </div>
           <CampoNumero
             label="Taxas para venda"
             unidade="R$/cab"
@@ -387,6 +396,7 @@ function FaseCard({
   calc,
   emVariante,
   gmdOverride,
+  validarObrigatorios,
   onChange,
   onRemover,
   onGmdOverride,
@@ -397,12 +407,14 @@ function FaseCard({
   calc: FaseCalculada | undefined;
   emVariante: boolean;
   gmdOverride: number;
+  validarObrigatorios?: boolean;
   onChange: (patch: Partial<Fase>) => void;
   onRemover: () => void;
   onGmdOverride: (v: number) => void;
 }) {
+  const gmdEfetivo = emVariante ? gmdOverride : fase.gmd;
   return (
-    <div className="rounded-md border border-neutral-200 bg-neutral-50 p-4">
+    <div data-fase-id={fase.id} className="rounded-md border border-neutral-200 bg-neutral-50 p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <label className="flex flex-1 items-center gap-2 text-sm">
           <span className="rounded-full bg-brand-800 px-2 py-0.5 text-[11px] font-semibold text-white">
@@ -464,6 +476,7 @@ function FaseCard({
           value={fase.diasNoPeriodo}
           onChange={(v) => onChange({ diasNoPeriodo: v })}
           bloqueado={emVariante}
+          alerta={validarObrigatorios ? alertaObrigatorio(fase.diasNoPeriodo) : null}
         />
         {!fase.confinamento && (
           <CampoNumero
@@ -472,17 +485,21 @@ function FaseCard({
             value={fase.areaHa}
             onChange={(v) => onChange({ areaHa: v })}
             bloqueado={emVariante}
+            alerta={validarObrigatorios ? alertaObrigatorio(fase.areaHa) : null}
           />
         )}
         <CampoNumero
           label="GMD"
           unidade="kg/dia"
           decimais={3}
-          value={emVariante ? gmdOverride : fase.gmd}
+          value={gmdEfetivo}
           onChange={(v) => (emVariante ? onGmdOverride(v) : onChange({ gmd: v }))}
           dica="Ganho de peso diário nesta fase."
           destacado
-          alerta={alertaGmd(emVariante ? gmdOverride : fase.gmd)}
+          alerta={
+            (validarObrigatorios && alertaObrigatorio(gmdEfetivo)) ||
+            alertaGmd(gmdEfetivo)
+          }
         />
         <CampoNumero
           label="Mortalidade"

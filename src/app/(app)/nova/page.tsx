@@ -104,6 +104,7 @@ function NovaPage() {
   const refPrecoCompra = useRef<HTMLDivElement>(null);
   const refPesoCompra = useRef<HTMLDivElement>(null);
   const refQtdCabecas = useRef<HTMLDivElement>(null);
+  const refPrecoVenda = useRef<HTMLDivElement>(null);
 
   // Carrega ou inicializa
   useEffect(() => {
@@ -189,6 +190,44 @@ function NovaPage() {
       setValidarObrigatorios(true);
       setErro("Preencha a quantidade de cabeças antes de continuar.");
       refQtdCabecas.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return false;
+    }
+    for (let i = 0; i < base.fases.length; i++) {
+      const fase = base.fases[i];
+      const gmdEfetivo = override.gmdPorFase?.[fase.id] ?? fase.gmd;
+      const rotulo = base.fases.length > 1 ? ` na fase "${fase.nome || `Fase ${i + 1}`}"` : "";
+      const scrollFase = () => {
+        if (typeof document !== "undefined") {
+          document
+            .querySelector(`[data-fase-id="${fase.id}"]`)
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      };
+      if (fase.diasNoPeriodo <= 0) {
+        setValidarObrigatorios(true);
+        setErro(`Preencha os dias no período${rotulo} antes de continuar.`);
+        scrollFase();
+        return false;
+      }
+      if (!fase.confinamento && fase.areaHa <= 0) {
+        setValidarObrigatorios(true);
+        setErro(`Preencha a área disponível${rotulo} antes de continuar.`);
+        scrollFase();
+        return false;
+      }
+      if (gmdEfetivo <= 0) {
+        setValidarObrigatorios(true);
+        setErro(`Preencha o GMD${rotulo} antes de continuar.`);
+        scrollFase();
+        return false;
+      }
+    }
+    const precoVendaEfetivo =
+      variante === "realista" ? base.precoVendaArroba : override.precoVendaArroba;
+    if (precoVendaEfetivo <= 0) {
+      setValidarObrigatorios(true);
+      setErro("Preencha o preço de venda antes de continuar.");
+      refPrecoVenda.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       return false;
     }
     return true;
@@ -354,6 +393,7 @@ function NovaPage() {
           refPrecoCompra={refPrecoCompra}
           refPesoCompra={refPesoCompra}
           refQtdCabecas={refQtdCabecas}
+          refPrecoVenda={refPrecoVenda}
         />
 
         <aside className="lg:sticky lg:top-6 lg:h-fit">
