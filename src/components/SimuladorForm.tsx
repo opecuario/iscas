@@ -12,6 +12,12 @@ import type {
 } from "@/lib/types";
 import { fmtBRL, fmtInt, fmtNum } from "@/lib/format";
 import { novaFase } from "@/lib/calculations";
+import {
+  alertaGmd,
+  alertaMortalidade,
+  alertaPrecoArroba,
+  alertaVendaMenorQueCompra,
+} from "@/lib/validacoes";
 import CampoNumero from "./CampoNumero";
 
 const FORMATO_LABEL: Record<FormatoCustoExtra, string> = {
@@ -98,6 +104,10 @@ export default function SimuladorForm({ base, setBase, variante, override, setOv
             }
             dica="Preço da arroba do animal que está entrando na operação."
             destacado
+            alerta={alertaPrecoArroba(
+              emVariante ? override.precoCompraArroba : base.precoCompraArroba,
+              "compra"
+            )}
           />
           <CampoNumero
             label="Peso de compra"
@@ -252,6 +262,11 @@ export default function SimuladorForm({ base, setBase, variante, override, setOv
                 : set("precoVendaArroba", v)
             }
             destacado
+            alerta={(() => {
+              const compra = emVariante ? override.precoCompraArroba : base.precoCompraArroba;
+              const venda = emVariante ? override.precoVendaArroba : base.precoVendaArroba;
+              return alertaPrecoArroba(venda, "venda") ?? alertaVendaMenorQueCompra(compra, venda);
+            })()}
           />
           <CampoNumero
             label="Taxas para venda"
@@ -435,6 +450,7 @@ function FaseCard({
           onChange={(v) => (emVariante ? onGmdOverride(v) : onChange({ gmd: v }))}
           dica="Ganho de peso diário nesta fase."
           destacado
+          alerta={alertaGmd(emVariante ? gmdOverride : fase.gmd)}
         />
         <CampoNumero
           label="Mortalidade"
@@ -443,6 +459,7 @@ function FaseCard({
           value={fase.mortalidadePct}
           onChange={(v) => onChange({ mortalidadePct: v })}
           bloqueado={emVariante}
+          alerta={alertaMortalidade(fase.mortalidadePct)}
         />
         <CampoNumero
           label="Consumo do suplemento"

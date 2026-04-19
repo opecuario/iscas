@@ -51,10 +51,13 @@ export default function BotaoBaixarPDF({ simNome, inputs, cenarios }: Props) {
       const a = document.createElement("a");
       a.href = url;
       a.download = fileName;
+      a.rel = "noopener";
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 2000);
     } catch (e) {
       console.error("Falha ao gerar PDF", e);
       alert("Não foi possível gerar o PDF. Tente novamente.");

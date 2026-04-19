@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { Alerta } from "@/lib/validacoes";
 
 interface Props {
   label: string;
@@ -21,6 +22,8 @@ interface Props {
   decimais?: number;
   /** Valor mínimo permitido (default 0) */
   min?: number;
+  /** Alerta suave (amarelo) ou forte (vermelho) abaixo do campo — não bloqueia. */
+  alerta?: Alerta | null;
 }
 
 function nf(decimais: number) {
@@ -84,7 +87,7 @@ function parseBR(s: string): number {
 }
 
 export default function CampoNumero(props: Props) {
-  const { label, value, onChange, unidade, dica, bloqueado, destacado, moeda, percentual, inteiro, min = 0 } = props;
+  const { label, value, onChange, unidade, dica, bloqueado, destacado, moeda, percentual, inteiro, min = 0, alerta } = props;
   const [focused, setFocused] = useState(false);
   const [texto, setTexto] = useState<string>(() => formatarExibicao(value, props));
   const inputRef = useRef<HTMLInputElement>(null);
@@ -153,11 +156,31 @@ export default function CampoNumero(props: Props) {
           onChange={handleChange}
           className={`w-full rounded-md border px-3 py-2 text-sm tabular-nums outline-none transition
             ${moeda && focused ? "pl-10" : ""}
-            ${bloqueado ? "cursor-not-allowed bg-neutral-100 border-neutral-200" : "bg-white border-neutral-300 focus:border-brand-600 focus:ring-1 focus:ring-brand-600"}`}
+            ${
+              bloqueado
+                ? "cursor-not-allowed bg-neutral-100 border-neutral-200"
+                : alerta?.nivel === "vermelho"
+                ? "bg-white border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-400"
+                : alerta?.nivel === "amarelo"
+                ? "bg-white border-amber-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-400"
+                : "bg-white border-neutral-300 focus:border-brand-600 focus:ring-1 focus:ring-brand-600"
+            }`}
         />
       </div>
 
-      {dica && <span className="mt-1 block text-[11px] leading-snug text-neutral-500">{dica}</span>}
+      {alerta && (
+        <span
+          className={`mt-1 flex items-start gap-1 text-[11px] font-medium leading-snug ${
+            alerta.nivel === "vermelho" ? "text-red-700" : "text-amber-800"
+          }`}
+        >
+          <span aria-hidden>⚠</span>
+          <span>{alerta.mensagem}</span>
+        </span>
+      )}
+      {dica && !alerta && (
+        <span className="mt-1 block text-[11px] leading-snug text-neutral-500">{dica}</span>
+      )}
     </label>
   );
 }

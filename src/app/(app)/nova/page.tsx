@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SimuladorForm from "@/components/SimuladorForm";
 import ResultadosPainel from "@/components/ResultadosPainel";
+import ConfirmacaoFinalModal from "@/components/ConfirmacaoFinalModal";
 import { INPUTS_PADRAO, calcular } from "@/lib/calculations";
 import {
   LIMITE_SIMULACOES,
@@ -97,6 +98,7 @@ function NovaPage() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [erroNome, setErroNome] = useState(false);
+  const [confirmandoFinal, setConfirmandoFinal] = useState(false);
   const nomeInputRef = useRef<HTMLInputElement>(null);
 
   // Carrega ou inicializa
@@ -155,6 +157,7 @@ function NovaPage() {
   }
 
   const out = useMemo(() => calcular(base, override), [base, override]);
+  const outRealista = useMemo(() => calcular(base), [base]);
   const inputsEfetivos = useMemo<InputsBase>(
     () => aplicarOverrideEmInputs(base, override),
     [base, override]
@@ -163,6 +166,19 @@ function NovaPage() {
   function copiarDoRealista() {
     if (variante === "otimista") setOtimista(snapshotDoBase(base));
     if (variante === "pessimista") setPessimista(snapshotDoBase(base));
+  }
+
+  function pedirConfirmacaoFinal() {
+    setErro(null);
+    const nomeTrim = nome.trim();
+    if (!nomeTrim) {
+      setErroNome(true);
+      setErro("Dê um nome para a simulação antes de salvar.");
+      nomeInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => nomeInputRef.current?.focus(), 300);
+      return;
+    }
+    setConfirmandoFinal(true);
   }
 
   async function salvar(finalizar: boolean) {
@@ -351,14 +367,14 @@ function NovaPage() {
             )}
             {!ehUltima && (
               <button
-                onClick={() => salvar(true)}
+                onClick={pedirConfirmacaoFinal}
                 className="rounded-md border border-brand-800 bg-white px-4 py-2.5 text-sm font-semibold text-brand-800 shadow-sm transition hover:bg-brand-50"
               >
                 Salvar e finalizar aqui
               </button>
             )}
             <button
-              onClick={() => salvar(ehUltima)}
+              onClick={() => (ehUltima ? pedirConfirmacaoFinal() : salvar(false))}
               className="rounded-md bg-brand-800 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
             >
               {ehUltima ? "Salvar e finalizar simulação" : labelProximo}
@@ -366,6 +382,17 @@ function NovaPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmacaoFinalModal
+        aberto={confirmandoFinal}
+        inputs={base}
+        out={outRealista}
+        onCancelar={() => setConfirmandoFinal(false)}
+        onConfirmar={() => {
+          setConfirmandoFinal(false);
+          salvar(true);
+        }}
+      />
     </div>
   );
 }

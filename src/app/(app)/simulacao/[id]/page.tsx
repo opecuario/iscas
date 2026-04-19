@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { calcular } from "@/lib/calculations";
 import { fmtBRL, fmtInt, fmtNum, fmtPct } from "@/lib/format";
+import { alertasResultado } from "@/lib/validacoes";
 import BotaoBaixarPDF from "@/components/BotaoBaixarPDF";
 import type { CenarioPDF } from "@/components/RelatorioPDF";
 
@@ -197,7 +198,52 @@ export default function SimulacaoResumo() {
         </div>
       </header>
 
-      {/* Gráfico simples de lucro */}
+      {(() => {
+        const alertas = alertasResultado(cenarios[0].out, sim.inputs);
+        if (alertas.length === 0) return null;
+        return (
+          <section className="mb-6 rounded-lg border-2 border-red-300 bg-red-50 p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <span aria-hidden className="text-2xl leading-none">⚠</span>
+              <div className="flex-1">
+                <h2 className="text-sm font-bold uppercase tracking-wide text-red-800">
+                  Resultado fora do padrão — reveja os números
+                </h2>
+                <p className="mt-1 text-xs text-red-800/80">
+                  O simulador calcula exatamente o que você digitou. Se o
+                  resultado parece bom/ruim demais, quase sempre é um valor em
+                  unidade errada (ex.: preço em R$/@ no lugar de R$/kg, ou
+                  custo esquecido).
+                </p>
+                <ul className="mt-3 space-y-2">
+                  {alertas.map((a, i) => (
+                    <li
+                      key={i}
+                      className={`rounded-md border p-2 text-xs ${
+                        a.nivel === "vermelho"
+                          ? "border-red-200 bg-white text-red-800"
+                          : "border-amber-200 bg-white text-amber-900"
+                      }`}
+                    >
+                      <span className="font-semibold">{a.titulo}:</span>{" "}
+                      {a.mensagem}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href={`/nova?id=${sim.id}&etapa=realista`}
+                  className="mt-3 inline-block rounded-md border border-red-400 bg-white px-3 py-1.5 text-xs font-semibold text-red-800 hover:bg-red-100"
+                >
+                  Editar valores
+                </Link>
+              </div>
+            </div>
+          </section>
+        );
+      })()}
+
+      {/* Gráfico simples de lucro — só faz sentido com 2+ cenários */}
+      {cenarios.length > 1 && (
       <section className="mb-8 rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
           Comparativo de lucro total
@@ -232,6 +278,7 @@ export default function SimulacaoResumo() {
           })}
         </div>
       </section>
+      )}
 
       {/* Tabela comparativa */}
       <section className="rounded-lg border border-neutral-200 bg-white shadow-sm">
@@ -289,17 +336,18 @@ export default function SimulacaoResumo() {
                 fmt={fmtBRL}
                 cenarioMobile={cenarioMobile}
               />
-              {sim.inputs.fases.map((f, idx) => (
-                <FaseBloco
-                  key={f.id}
-                  faseId={f.id}
-                  faseNome={f.nome}
-                  faseGmdBase={f.gmd}
-                  ordem={idx + 1}
-                  cenarios={cenarios}
-                  cenarioMobile={cenarioMobile}
-                />
-              ))}
+              {sim.inputs.fases.length > 1 &&
+                sim.inputs.fases.map((f, idx) => (
+                  <FaseBloco
+                    key={f.id}
+                    faseId={f.id}
+                    faseNome={f.nome}
+                    faseGmdBase={f.gmd}
+                    ordem={idx + 1}
+                    cenarios={cenarios}
+                    cenarioMobile={cenarioMobile}
+                  />
+                ))}
               <LinhaSeparador
                 label="Resumo do gado"
                 colSpan={cenarios.length + 1}
@@ -396,6 +444,47 @@ export default function SimulacaoResumo() {
                 unidade="dias"
                 cenarioMobile={cenarioMobile}
               />
+              {sim.inputs.fases.length === 1 && (
+                <>
+                  <LinhaCen
+                    label="GMD"
+                    cenarios={cenarios}
+                    pick={(c) =>
+                      c.override.gmdPorFase?.[sim.inputs.fases[0].id] ??
+                      sim.inputs.fases[0].gmd
+                    }
+                    fmt={fmtGmd}
+                    unidade="kg/dia"
+                    cenarioMobile={cenarioMobile}
+                  />
+                  <LinhaCen
+                    label="Consumo do suplemento"
+                    cenarios={cenarios}
+                    pick={(c) =>
+                      c.out.fases.find((f) => f.id === sim.inputs.fases[0].id)
+                        ?.consumoSuplementoPctPV ?? 0
+                    }
+                    fmt={fmtPct}
+                    unidade="do P.V."
+                    cenarioMobile={cenarioMobile}
+                  />
+                  <LinhaCen
+                    label="Suplemento consumido"
+                    cenarios={cenarios}
+                    pick={(c) => c.out.consumoTotalSuplementoKg}
+                    fmt={fmtInt}
+                    unidade="kg"
+                    cenarioMobile={cenarioMobile}
+                  />
+                  <LinhaCen
+                    label="Preço do suplemento (R$/kg)"
+                    cenarios={cenarios}
+                    pick={() => sim.inputs.fases[0].precoSuplementoKg}
+                    fmt={fmtBRL}
+                    cenarioMobile={cenarioMobile}
+                  />
+                </>
+              )}
               {cenarios[0].out.areaMaxima > 0 && (
                 <>
                   <LinhaCen
