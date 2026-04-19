@@ -18,7 +18,7 @@ export function alertaPrecoArroba(v: number, contexto: "compra" | "venda"): Aler
   if (v < min || v > max) {
     return {
       nivel: "amarelo",
-      mensagem: `Fora da faixa comum (R$ ${min} a R$ ${max}/@). Confere se o valor de ${contexto} está certo?`,
+      mensagem: `Valor incomum para ${contexto}. Confere se está certo?`,
     };
   }
   return null;
@@ -32,7 +32,7 @@ export function alertaGmd(v: number): Alerta | null {
   if (v > GMD_MAX_RAZOAVEL) {
     return {
       nivel: "amarelo",
-      mensagem: `GMD acima de ${GMD_MAX_RAZOAVEL} kg/dia é muito alto. Confere a unidade?`,
+      mensagem: "GMD muito alto. Confere a unidade?",
     };
   }
   return null;
@@ -43,13 +43,13 @@ export function alertaMortalidade(decimal: number): Alerta | null {
   if (decimal > MORTALIDADE_RISCO) {
     return {
       nivel: "vermelho",
-      mensagem: `Mortalidade acima de ${Math.round(MORTALIDADE_RISCO * 100)}% indica risco alto. Confere se não é ${Math.round(decimal * 10)}%?`,
+      mensagem: "Mortalidade muito alta — risco elevado. Confere se está certo?",
     };
   }
   if (decimal > MORTALIDADE_COMUM) {
     return {
       nivel: "amarelo",
-      mensagem: `Mortalidade entre ${Math.round(MORTALIDADE_COMUM * 100)}% e ${Math.round(MORTALIDADE_RISCO * 100)}% é aceitável mas acima do comum.`,
+      mensagem: "Mortalidade acima do comum. Confere?",
     };
   }
   return null;
@@ -59,7 +59,7 @@ export function alertaVendaMenorQueCompra(compra: number, venda: number): Alerta
   if (compra > 0 && venda > 0 && venda < compra * 0.7) {
     return {
       nivel: "amarelo",
-      mensagem: "Preço de venda bem abaixo do de compra — incomum. Confere?",
+      mensagem: "Preço de venda bem abaixo do de compra. Confere?",
     };
   }
   return null;
@@ -80,13 +80,13 @@ export function alertasResultado(out: Outputs, inputs: InputsBase): AlertaResult
       alertas.push({
         nivel: "vermelho",
         titulo: "Rentabilidade anual muito alta",
-        mensagem: `${(ra * 100).toFixed(0)}% ao ano é um retorno incomum para pecuária. Reveja os valores — normalmente algum preço está digitado em unidade errada (ex.: R$/@ onde era R$/kg, ou custo esquecido).`,
+        mensagem: "Retorno incomum para pecuária. Reveja os valores — normalmente algum preço está em unidade errada ou custo esquecido.",
       });
     } else if (ra < -0.5) {
       alertas.push({
         nivel: "vermelho",
         titulo: "Prejuízo muito alto",
-        mensagem: `Rentabilidade anual de ${(ra * 100).toFixed(0)}% indica prejuízo severo. Reveja custos e preços — pode haver um valor em ordem de grandeza errada.`,
+        mensagem: "Resultado indica prejuízo severo. Reveja custos e preços — pode haver algum valor em ordem de grandeza errada.",
       });
     }
   }
@@ -94,7 +94,7 @@ export function alertasResultado(out: Outputs, inputs: InputsBase): AlertaResult
     alertas.push({
       nivel: "amarelo",
       titulo: "Lucro por cabeça incomum",
-      mensagem: `Lucro de R$ ${Math.round(out.lucroCab)}/cab está acima do padrão de mercado (± R$ 500/cab). Confere preços e custos.`,
+      mensagem: "Lucro por cabeça fora do padrão de mercado. Confere preços e custos.",
     });
   }
   return alertas;
