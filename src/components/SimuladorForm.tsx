@@ -22,6 +22,7 @@ import {
 import CampoNumero from "./CampoNumero";
 
 const FORMATO_LABEL: Record<FormatoCustoExtra, string> = {
+  geral: "R$ total",
   por_cab_geral: "R$/cab (total)",
   por_cab_mes: "R$/cab/mês",
   mensal: "R$ mensal",
@@ -636,6 +637,7 @@ function CustosExtrasBloco({
                   disabled={bloqueado}
                   className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 disabled:cursor-not-allowed disabled:bg-neutral-100"
                 >
+                  <option value="geral">R$ total</option>
                   <option value="por_cab_geral">R$/cab (total)</option>
                   <option value="por_cab_mes">R$/cab/mês</option>
                   <option value="mensal">R$ mensal</option>

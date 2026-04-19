@@ -124,7 +124,10 @@ export function calcular(
     // Custos extras na fase
     let custosExtrasFase = 0;
     for (const c of extras) {
-      if (c.formato === "por_cab_geral") {
+      if (c.formato === "geral") {
+        // lump-sum total → vai inteiro na fase 1
+        if (idx === 0) custosExtrasFase += c.valor;
+      } else if (c.formato === "por_cab_geral") {
         // pontual → vai inteiro na fase 1
         if (idx === 0) custosExtrasFase += c.valor * cabInicialTotal;
       } else if (c.formato === "por_cab_mes") {
@@ -215,7 +218,9 @@ export function calcular(
   // Custos extras detalhados (para exibição "por linha")
   const custosExtrasDetalhado = extras.map((c) => {
     let valor = 0;
-    if (c.formato === "por_cab_geral") {
+    if (c.formato === "geral") {
+      valor = c.valor;
+    } else if (c.formato === "por_cab_geral") {
       valor = c.valor * cabInicialTotal;
     } else if (c.formato === "por_cab_mes") {
       valor = fasesCalc.reduce(

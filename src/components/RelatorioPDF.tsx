@@ -18,6 +18,7 @@ import { fmtBRL, fmtInt, fmtNum, fmtPct } from "@/lib/format";
 import {
   analiseSensibilidade,
   breakEvenPrecoVenda,
+  fluxoCaixaMensal,
   margemSegurancaVenda,
 } from "@/lib/analise";
 import { recomendacoes } from "@/lib/recomendacoes";
@@ -515,6 +516,67 @@ const styles = StyleSheet.create({
     color: NEUTRAL_900,
     lineHeight: 1.4,
   },
+  fcResumoRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 10,
+  },
+  fcResumoCard: {
+    flex: 1,
+    borderWidth: 0.5,
+    borderRadius: 3,
+    padding: 8,
+  },
+  fcResumoLabel: {
+    fontSize: 7.5,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    marginBottom: 2,
+  },
+  fcResumoValor: {
+    fontSize: 12,
+    fontFamily: "Helvetica-Bold",
+  },
+  fcResumoNota: {
+    fontSize: 7,
+    marginTop: 2,
+  },
+  fcTabela: {
+    borderWidth: 0.5,
+    borderColor: NEUTRAL_200,
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  fcHeaderRow: {
+    flexDirection: "row",
+    backgroundColor: NEUTRAL_50,
+    borderBottomWidth: 0.5,
+    borderBottomColor: NEUTRAL_200,
+  },
+  fcTh: {
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    color: NEUTRAL_500,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  fcRow: {
+    flexDirection: "row",
+    borderTopWidth: 0.3,
+    borderTopColor: NEUTRAL_100,
+  },
+  fcRowPico: {
+    backgroundColor: AMBER_100,
+  },
+  fcTd: {
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    fontSize: 8,
+  },
+  fcColMes: { flex: 1, color: BRAND_900, fontFamily: "Helvetica-Bold" },
+  fcColNum: { flex: 2, textAlign: "right", color: NEUTRAL_700 },
 });
 
 interface Props {
@@ -589,6 +651,18 @@ export default function RelatorioPDF({
         <BreakEvenBloco cenarioRealista={cenarios[0]} />
         <RecomendacoesBloco inputs={inputs} />
         <SensibilidadeBloco inputs={inputs} cenarioRealista={cenarios[0]} />
+
+        <Footer dataStr={dataStr} fixed />
+      </Page>
+
+      {/* =================== PÁGINA DE FLUXO DE CAIXA =================== */}
+      <Page size="A4" orientation="landscape" style={styles.page}>
+        <Header logo={logo} dataStr={dataStr} fixed />
+
+        <Text style={styles.simName}>{simNome}</Text>
+        <Text style={styles.meta}>Fluxo de caixa mensal — cenário realista</Text>
+
+        <FluxoCaixaBloco inputs={inputs} cenarioRealista={cenarios[0]} />
 
         <Footer dataStr={dataStr} fixed />
       </Page>
@@ -1286,6 +1360,139 @@ function RecomendacoesBloco({ inputs }: { inputs: InputsBase }) {
             <Text style={styles.recGanho}>+{fmtBRL(r.ganhoEstimado)}</Text>
           </View>
         ))}
+      </View>
+    </View>
+  );
+}
+
+function FluxoCaixaBloco({
+  inputs,
+  cenarioRealista,
+}: {
+  inputs: InputsBase;
+  cenarioRealista: CenarioPDF;
+}) {
+  const fc = fluxoCaixaMensal(inputs, cenarioRealista.override);
+  if (fc.meses.length === 0) return null;
+  return (
+    <View>
+      <Text style={styles.subTitulo}>
+        Quando o dinheiro sai (mês a mês) e quando entra (venda no fim). Útil
+        pra dimensionar capital de giro ou financiamento.
+      </Text>
+
+      <View style={styles.fcResumoRow}>
+        <View
+          style={[
+            styles.fcResumoCard,
+            { borderColor: AMBER_100, backgroundColor: "#fffbeb" },
+          ]}
+        >
+          <Text style={[styles.fcResumoLabel, { color: AMBER_800 }]}>
+            Maior necessidade de caixa
+          </Text>
+          <Text style={[styles.fcResumoValor, { color: AMBER_800 }]}>
+            {fmtBRL(fc.picoNecessidadeCaixa)}
+          </Text>
+          <Text style={[styles.fcResumoNota, { color: AMBER_700 }]}>
+            pico no mês {fc.mesPico}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.fcResumoCard,
+            { borderColor: NEUTRAL_200, backgroundColor: NEUTRAL_50 },
+          ]}
+        >
+          <Text style={[styles.fcResumoLabel, { color: NEUTRAL_500 }]}>
+            Total desembolsado
+          </Text>
+          <Text style={[styles.fcResumoValor, { color: BRAND_900 }]}>
+            {fmtBRL(fc.totalDesembolsado)}
+          </Text>
+          <Text style={[styles.fcResumoNota, { color: NEUTRAL_500 }]}>
+            ao longo de {fc.meses.length} meses
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.fcResumoCard,
+            { borderColor: EMERALD_100, backgroundColor: "#ecfdf5" },
+          ]}
+        >
+          <Text style={[styles.fcResumoLabel, { color: EMERALD_800 }]}>
+            Resultado final
+          </Text>
+          <Text
+            style={[
+              styles.fcResumoValor,
+              { color: fc.lucroFinal >= 0 ? EMERALD_800 : RED_700 },
+            ]}
+          >
+            {fmtBRL(fc.lucroFinal)}
+          </Text>
+          <Text style={[styles.fcResumoNota, { color: EMERALD_700 }]}>
+            após venda no mês {fc.meses.length}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.fcTabela}>
+        <View style={styles.fcHeaderRow} fixed>
+          <Text style={[styles.fcTh, styles.fcColMes]}>Mês</Text>
+          <Text style={[styles.fcTh, styles.fcColNum]}>Saídas</Text>
+          <Text style={[styles.fcTh, styles.fcColNum]}>Entradas</Text>
+          <Text style={[styles.fcTh, styles.fcColNum]}>Saldo do mês</Text>
+          <Text style={[styles.fcTh, styles.fcColNum]}>Caixa acumulado</Text>
+        </View>
+        {fc.meses.map((m) => {
+          const isPico = m.mes === fc.mesPico && fc.picoNecessidadeCaixa > 0;
+          return (
+            <View
+              key={m.mes}
+              style={[styles.fcRow, isPico ? styles.fcRowPico : {}]}
+              wrap={false}
+            >
+              <Text style={[styles.fcTd, styles.fcColMes]}>
+                {m.mes}
+                {isPico ? "  · pico" : ""}
+              </Text>
+              <Text style={[styles.fcTd, styles.fcColNum]}>
+                {m.saidas > 0 ? fmtBRL(m.saidas) : "—"}
+              </Text>
+              <Text
+                style={[
+                  styles.fcTd,
+                  styles.fcColNum,
+                  { color: m.entradas > 0 ? EMERALD_700 : NEUTRAL_500 },
+                ]}
+              >
+                {m.entradas > 0 ? fmtBRL(m.entradas) : "—"}
+              </Text>
+              <Text
+                style={[
+                  styles.fcTd,
+                  styles.fcColNum,
+                  { color: m.saldoMes >= 0 ? EMERALD_700 : RED_700 },
+                ]}
+              >
+                {fmtBRL(m.saldoMes)}
+              </Text>
+              <Text
+                style={[
+                  styles.fcTd,
+                  styles.fcColNum,
+                  {
+                    fontFamily: "Helvetica-Bold",
+                    color: m.caixaAcumulado >= 0 ? BRAND_900 : RED_700,
+                  },
+                ]}
+              >
+                {fmtBRL(m.caixaAcumulado)}
+              </Text>
+            </View>
+          );
+        })}
       </View>
     </View>
   );

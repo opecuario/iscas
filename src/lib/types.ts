@@ -1,4 +1,8 @@
-export type FormatoCustoExtra = "por_cab_geral" | "por_cab_mes" | "mensal";
+export type FormatoCustoExtra =
+  | "geral"
+  | "por_cab_geral"
+  | "por_cab_mes"
+  | "mensal";
 
 export interface CustoExtra {
   id: string;

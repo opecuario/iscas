@@ -11,6 +11,7 @@ import {
   analiseSensibilidade,
   breakEvenPrecoVenda,
   curvaLucro,
+  fluxoCaixaMensal,
   margemSegurancaVenda,
 } from "@/lib/analise";
 import { recomendacoes } from "@/lib/recomendacoes";
@@ -821,6 +822,12 @@ export default function SimulacaoResumo() {
           cenarios.find((c) => c.id === cenarioAnalise) ?? cenarios[0]
         }
       />
+      <FluxoCaixaSection
+        sim={sim}
+        cenario={
+          cenarios.find((c) => c.id === cenarioAnalise) ?? cenarios[0]
+        }
+      />
 
       {sim.observacoes && (
         <section className="mt-8 rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
@@ -1166,6 +1173,125 @@ function CurvaLucroSection({
           <span className="h-2 w-4 rounded" style={{ background: "#b45309" }} />
           Desembolso acumulado
         </span>
+      </div>
+    </section>
+  );
+}
+
+function FluxoCaixaSection({
+  sim,
+  cenario,
+}: {
+  sim: SimulacaoSalva;
+  cenario: CenarioAtivo;
+}) {
+  const fc = useMemo(
+    () => fluxoCaixaMensal(sim.inputs, cenario.override),
+    [sim.inputs, cenario]
+  );
+  if (fc.meses.length === 0) return null;
+  return (
+    <section className="mt-8 rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+        Fluxo de caixa mensal — {cenario.label}
+      </h2>
+      <p className="mt-1 text-xs text-neutral-600">
+        Quando o dinheiro sai (mês a mês) e quando entra (venda no fim). Útil
+        pra dimensionar capital de giro ou financiamento.
+      </p>
+
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">
+            Maior necessidade de caixa
+          </div>
+          <div className="mt-1 text-lg font-bold text-amber-900 tabular-nums">
+            {fmtBRL(fc.picoNecessidadeCaixa)}
+          </div>
+          <div className="text-[11px] text-amber-800/80">
+            pico no mês {fc.mesPico}
+          </div>
+        </div>
+        <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+            Total desembolsado
+          </div>
+          <div className="mt-1 text-lg font-bold text-brand-900 tabular-nums">
+            {fmtBRL(fc.totalDesembolsado)}
+          </div>
+          <div className="text-[11px] text-neutral-500">
+            ao longo de {fc.meses.length} meses
+          </div>
+        </div>
+        <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-800">
+            Resultado final
+          </div>
+          <div
+            className={`mt-1 text-lg font-bold tabular-nums ${
+              fc.lucroFinal >= 0 ? "text-emerald-800" : "text-red-700"
+            }`}
+          >
+            {fmtBRL(fc.lucroFinal)}
+          </div>
+          <div className="text-[11px] text-emerald-800/80">
+            após venda no mês {fc.meses.length}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 overflow-x-auto">
+        <table className="w-full min-w-[640px] text-xs">
+          <thead>
+            <tr className="border-b border-neutral-200 text-neutral-500">
+              <th className="py-2 text-left font-normal">Mês</th>
+              <th className="py-2 text-right font-normal">Saídas</th>
+              <th className="py-2 text-right font-normal">Entradas</th>
+              <th className="py-2 text-right font-normal">Saldo do mês</th>
+              <th className="py-2 text-right font-normal">Caixa acumulado</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-neutral-100">
+            {fc.meses.map((m) => {
+              const isPico = m.mes === fc.mesPico && fc.picoNecessidadeCaixa > 0;
+              return (
+                <tr
+                  key={m.mes}
+                  className={isPico ? "bg-amber-50/60" : ""}
+                >
+                  <td className="py-1.5 text-left font-medium text-brand-900">
+                    {m.mes}
+                    {isPico && (
+                      <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                        pico
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums text-neutral-700">
+                    {m.saidas > 0 ? fmtBRL(m.saidas) : "—"}
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums text-emerald-700">
+                    {m.entradas > 0 ? fmtBRL(m.entradas) : "—"}
+                  </td>
+                  <td
+                    className={`py-1.5 text-right tabular-nums ${
+                      m.saldoMes >= 0 ? "text-emerald-700" : "text-red-700"
+                    }`}
+                  >
+                    {fmtBRL(m.saldoMes)}
+                  </td>
+                  <td
+                    className={`py-1.5 text-right tabular-nums font-semibold ${
+                      m.caixaAcumulado >= 0 ? "text-brand-900" : "text-red-700"
+                    }`}
+                  >
+                    {fmtBRL(m.caixaAcumulado)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </section>
   );
