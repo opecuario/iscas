@@ -1234,11 +1234,10 @@ function BenchmarksSection({
   return (
     <section className="mt-8 rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
-        Como você se compara — referências BR
+        Como você se compara
       </h2>
       <p className="mt-1 text-xs text-neutral-600">
-        Comparação do cenário realista contra faixas médias do mercado
-        brasileiro. Não são regras rígidas — servem de baliza.
+        Avaliação do cenário realista nos principais indicadores da operação.
       </p>
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((c, i) => {
@@ -1261,9 +1260,6 @@ function BenchmarksSection({
                 }`}
               >
                 {rotuloBenchmark(nivel)}
-              </div>
-              <div className="mt-1.5 text-[11px] text-neutral-500">
-                {c.bench.descricao}
               </div>
             </div>
           );

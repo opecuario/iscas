@@ -90,7 +90,7 @@ export default function ResultadosPainel({
         <Linha label="@ produzidas totais" val={fmtNum(out.arrobasProduzidasTotal)} />
         <Linha
           label="@ produzidas por hectare"
-          val={`${fmtNum(out.arrobasProduzidasHa)} (média BR ≈ 5,5)`}
+          val={fmtNum(out.arrobasProduzidasHa)}
           tag={out.arrobasProduzidasHa > 0 ? <TagBench nivel={arrobasNivel} /> : undefined}
         />
         <Linha
