@@ -12,6 +12,7 @@ interface Props {
   simNome: string;
   inputs: InputsBase;
   cenarios: CenarioPDF[];
+  observacoes?: string;
 }
 
 function sanitizeFilename(nome: string): string {
@@ -24,7 +25,7 @@ function sanitizeFilename(nome: string): string {
   return limpo || "relatorio";
 }
 
-export default function BotaoBaixarPDF({ simNome, inputs, cenarios }: Props) {
+export default function BotaoBaixarPDF({ simNome, inputs, cenarios, observacoes }: Props) {
   const [gerando, setGerando] = useState(false);
   const toast = useToast();
 
@@ -47,6 +48,7 @@ export default function BotaoBaixarPDF({ simNome, inputs, cenarios }: Props) {
           inputs={inputs}
           cenarios={cenarios}
           dataGeracao={new Date()}
+          observacoes={observacoes}
         />
       ).toBlob();
       const url = URL.createObjectURL(blob);

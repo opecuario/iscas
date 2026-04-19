@@ -193,6 +193,7 @@ export default function SimulacaoResumo() {
             simNome={sim.nome}
             inputs={sim.inputs}
             cenarios={cenariosPDF}
+            observacoes={sim.observacoes}
           />
           <button
             onClick={compartilhar}

@@ -15,6 +15,13 @@ import type {
   VarianteOverride,
 } from "@/lib/types";
 import { fmtBRL, fmtInt, fmtNum, fmtPct } from "@/lib/format";
+import {
+  analiseSensibilidade,
+  breakEvenPrecoVenda,
+  margemSegurancaVenda,
+} from "@/lib/analise";
+import { recomendacoes } from "@/lib/recomendacoes";
+import { BENCHMARKS, avaliar, rotuloBenchmark } from "@/lib/benchmarks";
 
 export type CenarioPDF = {
   id: TipoVariante;
@@ -35,7 +42,14 @@ const NEUTRAL_200 = "#e5e5e5";
 const NEUTRAL_100 = "#f5f5f5";
 const NEUTRAL_50 = "#fafafa";
 const EMERALD_700 = "#047857";
+const EMERALD_100 = "#d1fae5";
+const EMERALD_800 = "#065f46";
+const AMBER_700 = "#b45309";
+const AMBER_100 = "#fef3c7";
+const AMBER_800 = "#92400e";
 const RED_700 = "#b91c1c";
+const RED_100 = "#fee2e2";
+const RED_800 = "#991b1b";
 
 const NUM3 = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 });
 const fmtGmd = (v: number) => (isFinite(v) ? NUM3.format(v) : "—");
@@ -334,6 +348,173 @@ const styles = StyleSheet.create({
     fontSize: 7,
     color: NEUTRAL_500,
   },
+  // ---- Analises: benchmarks / break-even / recomendacoes / sensibilidade ----
+  subTitulo: {
+    fontSize: 7.5,
+    color: NEUTRAL_500,
+    marginBottom: 8,
+    lineHeight: 1.4,
+  },
+  benchGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12,
+  },
+  benchCard: {
+    width: "32%",
+    borderWidth: 0.5,
+    borderColor: NEUTRAL_200,
+    borderRadius: 3,
+    padding: 8,
+    backgroundColor: NEUTRAL_50,
+  },
+  benchRotulo: {
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    color: BRAND_800,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    marginBottom: 2,
+  },
+  benchValor: {
+    fontSize: 12,
+    fontFamily: "Helvetica-Bold",
+    color: NEUTRAL_900,
+  },
+  benchTag: {
+    marginTop: 3,
+    alignSelf: "flex-start",
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 2,
+    fontSize: 7,
+    fontFamily: "Helvetica-Bold",
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+  },
+  beRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 10,
+  },
+  beCard: {
+    flex: 1,
+    borderWidth: 0.5,
+    borderColor: NEUTRAL_200,
+    borderRadius: 3,
+    padding: 8,
+    backgroundColor: NEUTRAL_50,
+  },
+  beLabel: {
+    fontSize: 7.5,
+    color: NEUTRAL_500,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    marginBottom: 2,
+  },
+  beValor: {
+    fontSize: 13,
+    fontFamily: "Helvetica-Bold",
+    color: NEUTRAL_900,
+  },
+  beNota: {
+    fontSize: 7,
+    color: NEUTRAL_500,
+    marginTop: 2,
+  },
+  recList: {
+    marginBottom: 10,
+  },
+  recItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    borderWidth: 0.5,
+    borderColor: EMERALD_100,
+    backgroundColor: "#ecfdf5",
+    borderRadius: 3,
+    marginBottom: 4,
+  },
+  recNum: {
+    width: 14,
+    height: 14,
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    color: "#ffffff",
+    backgroundColor: EMERALD_700,
+    textAlign: "center",
+    borderRadius: 7,
+    paddingTop: 2,
+  },
+  recBody: { flex: 1 },
+  recTitulo: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: BRAND_900,
+  },
+  recDesc: {
+    fontSize: 7.5,
+    color: NEUTRAL_700,
+    marginTop: 1,
+    lineHeight: 1.3,
+  },
+  recGanho: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: EMERALD_700,
+  },
+  sensRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  sensCard: {
+    flex: 1,
+    borderWidth: 0.5,
+    borderColor: NEUTRAL_200,
+    borderRadius: 3,
+    padding: 6,
+    backgroundColor: NEUTRAL_50,
+  },
+  sensTituloBox: {
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    color: BRAND_800,
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+    marginBottom: 4,
+  },
+  sensHeader: {
+    flexDirection: "row",
+    borderBottomWidth: 0.5,
+    borderBottomColor: NEUTRAL_200,
+    paddingBottom: 2,
+  },
+  sensLinha: {
+    flexDirection: "row",
+    paddingVertical: 2,
+  },
+  sensZero: {
+    fontFamily: "Helvetica-Bold",
+  },
+  sensColVar: { flex: 1.1, fontSize: 7.5, color: NEUTRAL_500 },
+  sensColLucro: { flex: 1.6, fontSize: 7.5, textAlign: "right", color: NEUTRAL_700 },
+  sensColDelta: { flex: 1.4, fontSize: 7.5, textAlign: "right", color: NEUTRAL_500 },
+  obsBloco: {
+    borderWidth: 0.5,
+    borderColor: NEUTRAL_200,
+    borderRadius: 3,
+    padding: 10,
+    backgroundColor: NEUTRAL_50,
+    marginBottom: 10,
+  },
+  obsTexto: {
+    fontSize: 9,
+    color: NEUTRAL_900,
+    lineHeight: 1.4,
+  },
 });
 
 interface Props {
@@ -341,6 +522,7 @@ interface Props {
   inputs: InputsBase;
   cenarios: CenarioPDF[];
   dataGeracao: Date;
+  observacoes?: string;
 }
 
 export default function RelatorioPDF({
@@ -348,6 +530,7 @@ export default function RelatorioPDF({
   inputs,
   cenarios,
   dataGeracao,
+  observacoes,
 }: Props) {
   const out0 = cenarios[0].out;
   const temExtras = (inputs.custosExtras ?? []).length > 0;
@@ -391,6 +574,21 @@ export default function RelatorioPDF({
           </Text>
           <Text style={styles.capaCtaWhats}>WhatsApp: (66) 9985-2419</Text>
         </View>
+
+        <Footer dataStr={dataStr} fixed />
+      </Page>
+
+      {/* =================== PÁGINA DE ANÁLISES =================== */}
+      <Page size="A4" orientation="landscape" style={styles.page}>
+        <Header logo={logo} dataStr={dataStr} fixed />
+
+        <Text style={styles.simName}>{simNome}</Text>
+        <Text style={styles.meta}>Análises do cenário realista</Text>
+
+        <BenchmarksBloco inputs={inputs} out={out0} />
+        <BreakEvenBloco cenarioRealista={cenarios[0]} />
+        <RecomendacoesBloco inputs={inputs} />
+        <SensibilidadeBloco inputs={inputs} cenarioRealista={cenarios[0]} />
 
         <Footer dataStr={dataStr} fixed />
       </Page>
@@ -644,6 +842,15 @@ export default function RelatorioPDF({
             ))}
           </DataRow>
         </View>
+
+        {observacoes && observacoes.trim().length > 0 && (
+          <View wrap={false}>
+            <Text style={styles.sectionTitle}>Anotações</Text>
+            <View style={styles.obsBloco}>
+              <Text style={styles.obsTexto}>{observacoes.trim()}</Text>
+            </View>
+          </View>
+        )}
 
         <Footer dataStr={dataStr} fixed />
       </Page>
@@ -942,5 +1149,213 @@ function FaseBloco({
         ))}
       </DataRow>
     </>
+  );
+}
+
+// --------- Analises (benchmarks / break-even / recomendacoes / sensibilidade) ---------
+
+function tagStyleFor(nivel: "bom" | "medio" | "ruim") {
+  if (nivel === "bom") {
+    return { backgroundColor: EMERALD_100, color: EMERALD_800 };
+  }
+  if (nivel === "ruim") {
+    return { backgroundColor: RED_100, color: RED_800 };
+  }
+  return { backgroundColor: AMBER_100, color: AMBER_800 };
+}
+
+function BenchmarksBloco({ inputs, out }: { inputs: InputsBase; out: Outputs }) {
+  const mortalidade =
+    inputs.qtdCabecas > 0
+      ? (inputs.qtdCabecas - out.cabFinal) / inputs.qtdCabecas
+      : 0;
+  const temArea = out.areaMaxima > 0;
+
+  const items: {
+    bench: typeof BENCHMARKS[keyof typeof BENCHMARKS];
+    valor: number;
+    textoValor: string;
+    inverso?: boolean;
+    mostrar: boolean;
+  }[] = [
+    {
+      bench: BENCHMARKS.arrobasPorHa,
+      valor: out.arrobasProduzidasHa,
+      textoValor: `${fmtNum(out.arrobasProduzidasHa)} @/ha`,
+      mostrar: temArea,
+    },
+    {
+      bench: BENCHMARKS.gmd,
+      valor: out.gmdMedio,
+      textoValor: `${fmtGmd(out.gmdMedio)} kg/dia`,
+      mostrar: true,
+    },
+    {
+      bench: BENCHMARKS.mortalidade,
+      valor: mortalidade,
+      textoValor: fmtPct(mortalidade),
+      inverso: true,
+      mostrar: true,
+    },
+    {
+      bench: BENCHMARKS.rentabilidadeAno,
+      valor: out.rentabilidadeAno,
+      textoValor: fmtPct(out.rentabilidadeAno),
+      mostrar: true,
+    },
+    {
+      bench: BENCHMARKS.lotacaoMedia,
+      valor: out.lotacaoMedia,
+      textoValor: `${fmtNum(out.lotacaoMedia)} U.A./ha`,
+      mostrar: temArea,
+    },
+  ];
+
+  const visiveis = items.filter((i) => i.mostrar);
+
+  return (
+    <View wrap={false}>
+      <Text style={styles.sectionTitle}>Benchmarks de mercado</Text>
+      <View style={styles.benchGrid}>
+        {visiveis.map((it) => {
+          const nivel = avaliar(it.bench, it.valor, it.inverso ?? false);
+          const tagCol = tagStyleFor(nivel);
+          return (
+            <View key={it.bench.chave} style={styles.benchCard}>
+              <Text style={styles.benchRotulo}>{it.bench.rotulo}</Text>
+              <Text style={styles.benchValor}>{it.textoValor}</Text>
+              <Text style={[styles.benchTag, tagCol]}>
+                {rotuloBenchmark(nivel)}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function BreakEvenBloco({ cenarioRealista }: { cenarioRealista: CenarioPDF }) {
+  const out = cenarioRealista.out;
+  const precoVenda = cenarioRealista.override.precoVendaArroba;
+  const be = breakEvenPrecoVenda(out);
+  const margem = margemSegurancaVenda(out, precoVenda);
+  const margemCor =
+    margem >= 0.15 ? EMERALD_700 : margem >= 0 ? AMBER_700 : RED_700;
+
+  return (
+    <View wrap={false}>
+      <Text style={styles.sectionTitle}>Ponto de equilíbrio e margem de segurança</Text>
+      <View style={styles.beRow}>
+        <View style={styles.beCard}>
+          <Text style={styles.beLabel}>Preço de equilíbrio</Text>
+          <Text style={styles.beValor}>{fmtBRL(be)}</Text>
+          <Text style={styles.beNota}>R$/@ de venda que zera o lucro</Text>
+        </View>
+        <View style={styles.beCard}>
+          <Text style={styles.beLabel}>Preço de venda atual</Text>
+          <Text style={styles.beValor}>{fmtBRL(precoVenda)}</Text>
+          <Text style={styles.beNota}>Cenário realista</Text>
+        </View>
+        <View style={styles.beCard}>
+          <Text style={styles.beLabel}>Margem de segurança</Text>
+          <Text style={[styles.beValor, { color: margemCor }]}>
+            {fmtPct(margem)}
+          </Text>
+          <Text style={styles.beNota}>Queda máxima antes de prejuízo</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function RecomendacoesBloco({ inputs }: { inputs: InputsBase }) {
+  const recs = recomendacoes(inputs);
+  if (recs.length === 0) return null;
+  return (
+    <View>
+      <Text style={styles.sectionTitle}>Recomendações acionáveis</Text>
+      <View style={styles.recList}>
+        {recs.map((r, i) => (
+          <View key={i} style={styles.recItem} wrap={false}>
+            <Text style={styles.recNum}>{i + 1}</Text>
+            <View style={styles.recBody}>
+              <Text style={styles.recTitulo}>{r.titulo}</Text>
+              <Text style={styles.recDesc}>{r.descricao}</Text>
+            </View>
+            <Text style={styles.recGanho}>+{fmtBRL(r.ganhoEstimado)}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function SensibilidadeBloco({
+  inputs,
+  cenarioRealista,
+}: {
+  inputs: InputsBase;
+  cenarioRealista: CenarioPDF;
+}) {
+  const tabelas = analiseSensibilidade(inputs, cenarioRealista.override);
+  return (
+    <View wrap={false}>
+      <Text style={styles.sectionTitle}>Sensibilidade do lucro</Text>
+      <Text style={styles.subTitulo}>
+        Como o lucro final muda se cada variável variar ±10% (cenário realista).
+      </Text>
+      <View style={styles.sensRow}>
+        {tabelas.map((t) => (
+          <View key={t.variavel} style={styles.sensCard}>
+            <Text style={styles.sensTituloBox}>{t.rotulo}</Text>
+            <View style={styles.sensHeader}>
+              <Text style={styles.sensColVar}>Var.</Text>
+              <Text style={styles.sensColLucro}>Lucro</Text>
+              <Text style={styles.sensColDelta}>Δ</Text>
+            </View>
+            {t.linhas.map((l, i) => {
+              const isZero = l.variacaoPct === 0;
+              const sinal = l.variacaoPct > 0 ? "+" : "";
+              const deltaSinal = l.deltaLucro > 0 ? "+" : "";
+              const deltaCor =
+                l.deltaLucro > 0
+                  ? EMERALD_700
+                  : l.deltaLucro < 0
+                  ? RED_700
+                  : NEUTRAL_500;
+              return (
+                <View key={i} style={styles.sensLinha}>
+                  <Text
+                    style={[
+                      styles.sensColVar,
+                      isZero ? styles.sensZero : {},
+                    ]}
+                  >
+                    {isZero ? "Atual" : `${sinal}${Math.round(l.variacaoPct * 100)}%`}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.sensColLucro,
+                      isZero ? styles.sensZero : {},
+                    ]}
+                  >
+                    {fmtBRL(l.lucro)}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.sensColDelta,
+                      { color: isZero ? NEUTRAL_500 : deltaCor },
+                    ]}
+                  >
+                    {isZero ? "—" : `${deltaSinal}${fmtBRL(l.deltaLucro)}`}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        ))}
+      </View>
+    </View>
   );
 }
