@@ -55,6 +55,11 @@ export function alertaMortalidade(decimal: number): Alerta | null {
   return null;
 }
 
+export function alertaObrigatorio(v: number): Alerta | null {
+  if (v > 0) return null;
+  return { nivel: "vermelho", mensagem: "Campo obrigatório — informe um valor." };
+}
+
 export function alertaVendaMenorQueCompra(compra: number, venda: number): Alerta | null {
   if (compra > 0 && venda > 0 && venda < compra * 0.7) {
     return {

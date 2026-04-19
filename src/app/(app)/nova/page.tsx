@@ -98,8 +98,12 @@ function NovaPage() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [erroNome, setErroNome] = useState(false);
+  const [validarObrigatorios, setValidarObrigatorios] = useState(false);
   const [confirmandoFinal, setConfirmandoFinal] = useState(false);
   const nomeInputRef = useRef<HTMLInputElement>(null);
+  const refPrecoCompra = useRef<HTMLDivElement>(null);
+  const refPesoCompra = useRef<HTMLDivElement>(null);
+  const refQtdCabecas = useRef<HTMLDivElement>(null);
 
   // Carrega ou inicializa
   useEffect(() => {
@@ -168,6 +172,28 @@ function NovaPage() {
     if (variante === "pessimista") setPessimista(snapshotDoBase(base));
   }
 
+  function validarCamposObrigatorios(): boolean {
+    if (base.precoCompraArroba <= 0) {
+      setValidarObrigatorios(true);
+      setErro("Preencha o preço de compra antes de continuar.");
+      refPrecoCompra.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return false;
+    }
+    if (base.pesoCompraKg <= 0) {
+      setValidarObrigatorios(true);
+      setErro("Preencha o peso de compra antes de continuar.");
+      refPesoCompra.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return false;
+    }
+    if (base.qtdCabecas <= 0) {
+      setValidarObrigatorios(true);
+      setErro("Preencha a quantidade de cabeças antes de continuar.");
+      refQtdCabecas.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return false;
+    }
+    return true;
+  }
+
   function pedirConfirmacaoFinal() {
     setErro(null);
     const nomeTrim = nome.trim();
@@ -178,6 +204,7 @@ function NovaPage() {
       setTimeout(() => nomeInputRef.current?.focus(), 300);
       return;
     }
+    if (!validarCamposObrigatorios()) return;
     setConfirmandoFinal(true);
   }
 
@@ -195,6 +222,7 @@ function NovaPage() {
       setTimeout(() => nomeInputRef.current?.focus(), 300);
       return;
     }
+    if (!validarCamposObrigatorios()) return;
     const usuarioAtual = await getUsuario();
     if (!usuarioAtual) {
       setErro("Sessão expirada. Faça login novamente.");
@@ -322,6 +350,10 @@ function NovaPage() {
           override={override}
           setOverride={setOverride}
           out={out}
+          validarObrigatorios={validarObrigatorios}
+          refPrecoCompra={refPrecoCompra}
+          refPesoCompra={refPesoCompra}
+          refQtdCabecas={refQtdCabecas}
         />
 
         <aside className="lg:sticky lg:top-6 lg:h-fit">

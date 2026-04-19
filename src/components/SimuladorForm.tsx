@@ -15,6 +15,7 @@ import { novaFase } from "@/lib/calculations";
 import {
   alertaGmd,
   alertaMortalidade,
+  alertaObrigatorio,
   alertaPrecoArroba,
   alertaVendaMenorQueCompra,
 } from "@/lib/validacoes";
@@ -41,9 +42,26 @@ interface Props {
   override: VarianteOverride;
   setOverride: (o: VarianteOverride) => void;
   out: Outputs;
+  /** Quando true, campos obrigatórios zerados ganham alerta vermelho. */
+  validarObrigatorios?: boolean;
+  /** Refs para scroll-to-error em campos obrigatórios. */
+  refPrecoCompra?: React.RefObject<HTMLDivElement | null>;
+  refPesoCompra?: React.RefObject<HTMLDivElement | null>;
+  refQtdCabecas?: React.RefObject<HTMLDivElement | null>;
 }
 
-export default function SimuladorForm({ base, setBase, variante, override, setOverride, out }: Props) {
+export default function SimuladorForm({
+  base,
+  setBase,
+  variante,
+  override,
+  setOverride,
+  out,
+  validarObrigatorios,
+  refPrecoCompra,
+  refPesoCompra,
+  refQtdCabecas,
+}: Props) {
   const emVariante = variante !== "realista";
   const set = <K extends keyof InputsBase>(k: K, v: InputsBase[K]) =>
     setBase({ ...base, [k]: v });
@@ -92,31 +110,42 @@ export default function SimuladorForm({ base, setBase, variante, override, setOv
         ]}
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <CampoNumero
-            label="Preço de compra"
-            unidade="R$/@"
-            moeda
-            value={emVariante ? override.precoCompraArroba : base.precoCompraArroba}
-            onChange={(v) =>
-              emVariante
-                ? setOverride({ ...override, precoCompraArroba: v })
-                : set("precoCompraArroba", v)
-            }
-            dica="Preço da arroba do animal que está entrando na operação."
-            destacado
-            alerta={alertaPrecoArroba(
-              emVariante ? override.precoCompraArroba : base.precoCompraArroba,
-              "compra"
-            )}
-          />
-          <CampoNumero
-            label="Peso de compra"
-            unidade="kg"
-            value={base.pesoCompraKg}
-            onChange={(v) => set("pesoCompraKg", v)}
-            bloqueado={emVariante}
-            dica="Peso inicial do animal na entrada."
-          />
+          <div ref={refPrecoCompra}>
+            <CampoNumero
+              label="Preço de compra"
+              unidade="R$/@"
+              moeda
+              value={emVariante ? override.precoCompraArroba : base.precoCompraArroba}
+              onChange={(v) =>
+                emVariante
+                  ? setOverride({ ...override, precoCompraArroba: v })
+                  : set("precoCompraArroba", v)
+              }
+              dica="Preço da arroba do animal que está entrando na operação."
+              destacado
+              alerta={
+                (validarObrigatorios &&
+                  alertaObrigatorio(
+                    emVariante ? override.precoCompraArroba : base.precoCompraArroba
+                  )) ||
+                alertaPrecoArroba(
+                  emVariante ? override.precoCompraArroba : base.precoCompraArroba,
+                  "compra"
+                )
+              }
+            />
+          </div>
+          <div ref={refPesoCompra}>
+            <CampoNumero
+              label="Peso de compra"
+              unidade="kg"
+              value={base.pesoCompraKg}
+              onChange={(v) => set("pesoCompraKg", v)}
+              bloqueado={emVariante}
+              dica="Peso inicial do animal na entrada."
+              alerta={validarObrigatorios ? alertaObrigatorio(base.pesoCompraKg) : null}
+            />
+          </div>
           <CampoNumero
             label="Frete + comissão"
             unidade="R$/cab"
@@ -125,13 +154,16 @@ export default function SimuladorForm({ base, setBase, variante, override, setOv
             onChange={(v) => set("freteComissaoCab", v)}
             bloqueado={emVariante}
           />
-          <CampoNumero
-            label="Quantidade de cabeças"
-            inteiro
-            value={base.qtdCabecas}
-            onChange={(v) => set("qtdCabecas", v)}
-            bloqueado={emVariante}
-          />
+          <div ref={refQtdCabecas}>
+            <CampoNumero
+              label="Quantidade de cabeças"
+              inteiro
+              value={base.qtdCabecas}
+              onChange={(v) => set("qtdCabecas", v)}
+              bloqueado={emVariante}
+              alerta={validarObrigatorios ? alertaObrigatorio(base.qtdCabecas) : null}
+            />
+          </div>
         </div>
       </Secao>
 
