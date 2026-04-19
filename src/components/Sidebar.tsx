@@ -36,7 +36,8 @@ export default function Sidebar() {
     };
   }, [pathname]);
 
-  const cheio = simulacoes.length >= LIMITE_SIMULACOES;
+  const ilimitadas = !!usuario?.simulacoesIlimitadas;
+  const cheio = !ilimitadas && simulacoes.length >= LIMITE_SIMULACOES;
 
   async function logout() {
     await sair();
@@ -90,7 +91,9 @@ export default function Sidebar() {
           + Nova simulação
         </Link>
         <p className="mt-2 text-center text-[11px] text-neutral-500">
-          {simulacoes.length} de {LIMITE_SIMULACOES} slots usados
+          {ilimitadas
+            ? `${simulacoes.length} simulações · plano ilimitado`
+            : `${simulacoes.length} de ${LIMITE_SIMULACOES} slots usados`}
         </p>
       </div>
 

@@ -242,6 +242,97 @@ export default function SimulacaoResumo() {
         );
       })()}
 
+      {/* Cards executivos — estilo capa do PDF */}
+      <section className="mb-8">
+        <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-neutral-500">
+          Resumo executivo
+        </h2>
+        <div
+          className={`grid grid-cols-1 gap-4 ${
+            cenarios.length === 2
+              ? "md:grid-cols-2"
+              : cenarios.length >= 3
+              ? "md:grid-cols-3"
+              : ""
+          }`}
+        >
+          {cenarios.map((c) => {
+            const lucroPos = c.out.lucro >= 0;
+            return (
+              <div
+                key={c.id}
+                className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-md"
+              >
+                <div className={`${c.cor} px-5 py-3 text-center`}>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-white">
+                    Cenário {c.label}
+                  </h3>
+                </div>
+                <div className="p-5">
+                  <div className="text-center">
+                    <div className="text-[10px] font-semibold uppercase tracking-widest text-neutral-500">
+                      Lucro total
+                    </div>
+                    <div
+                      className={`mt-1 text-3xl font-bold tabular-nums ${
+                        lucroPos ? "text-emerald-700" : "text-red-700"
+                      }`}
+                    >
+                      {fmtBRL(c.out.lucro)}
+                    </div>
+                    <div
+                      className={`mt-0.5 text-xs font-medium ${
+                        lucroPos ? "text-emerald-700/80" : "text-red-700/80"
+                      }`}
+                    >
+                      {fmtPct(c.out.rentabilidadeAno)} ao ano
+                    </div>
+                  </div>
+                  <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-neutral-100 pt-4 text-center">
+                    <div>
+                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
+                        Lucro/cab
+                      </dt>
+                      <dd
+                        className={`mt-1 text-base font-semibold tabular-nums ${
+                          c.out.lucroCab >= 0 ? "text-emerald-700" : "text-red-700"
+                        }`}
+                      >
+                        {fmtBRL(c.out.lucroCab)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
+                        Custo da @ produzida
+                      </dt>
+                      <dd className="mt-1 text-base font-semibold tabular-nums text-brand-900">
+                        {fmtBRL(c.out.custoArrobaProduzida)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
+                        Faturamento
+                      </dt>
+                      <dd className="mt-1 text-sm font-semibold tabular-nums text-brand-900">
+                        {fmtBRL(c.out.faturamentoTotal)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
+                        Desembolsado
+                      </dt>
+                      <dd className="mt-1 text-sm font-semibold tabular-nums text-brand-900">
+                        {fmtBRL(c.out.totalDesembolsado)}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       {/* Gráfico simples de lucro — só faz sentido com 2+ cenários */}
       {cenarios.length > 1 && (
       <section className="mb-8 rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
@@ -310,7 +401,7 @@ export default function SimulacaoResumo() {
                 {cenarios.map((c) => (
                   <th
                     key={c.id}
-                    className={`px-4 py-3 font-semibold ${
+                    className={`px-4 py-3 text-center font-bold tracking-wider text-white ${c.cor} ${
                       cenarios.length > 1 && c.id !== cenarioMobile
                         ? "hidden md:table-cell"
                         : ""
