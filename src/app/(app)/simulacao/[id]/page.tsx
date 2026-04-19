@@ -280,21 +280,44 @@ export default function SimulacaoResumo() {
                     >
                       {fmtBRL(c.out.lucro)}
                     </div>
-                    <div
-                      className={`mt-0.5 text-xs font-medium ${
-                        lucroPos ? "text-emerald-700/80" : "text-red-700/80"
-                      }`}
-                    >
-                      {fmtPct(c.out.rentabilidadeAno)} ao ano
-                    </div>
                   </div>
-                  <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-neutral-100 pt-4 text-center">
+                  <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-neutral-100 pt-4 text-center">
+                    {c.out.areaMaxima > 0 && (
+                      <div>
+                        <dt className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+                          Lucro/ha
+                        </dt>
+                        <dd
+                          className={`mt-1 text-xl font-bold tabular-nums ${
+                            c.out.lucroHa >= 0 ? "text-emerald-700" : "text-red-700"
+                          }`}
+                        >
+                          {fmtBRL(c.out.lucroHa)}
+                        </dd>
+                      </div>
+                    )}
+                    <div className={c.out.areaMaxima > 0 ? "" : "col-span-2"}>
+                      <dt className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+                        Rentab. ao ano
+                      </dt>
+                      <dd
+                        className={`mt-1 text-xl font-bold tabular-nums ${
+                          c.out.rentabilidadeAno >= 0
+                            ? "text-emerald-700"
+                            : "text-red-700"
+                        }`}
+                      >
+                        {fmtPct(c.out.rentabilidadeAno)}
+                      </dd>
+                    </div>
+                  </dl>
+                  <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-neutral-100 pt-3 text-center">
                     <div>
                       <dt className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
                         Lucro/cab
                       </dt>
                       <dd
-                        className={`mt-1 text-base font-semibold tabular-nums ${
+                        className={`mt-0.5 text-sm font-semibold tabular-nums ${
                           c.out.lucroCab >= 0 ? "text-emerald-700" : "text-red-700"
                         }`}
                       >
@@ -305,7 +328,7 @@ export default function SimulacaoResumo() {
                       <dt className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
                         Custo da @ produzida
                       </dt>
-                      <dd className="mt-1 text-base font-semibold tabular-nums text-brand-900">
+                      <dd className="mt-0.5 text-sm font-semibold tabular-nums text-brand-900">
                         {fmtBRL(c.out.custoArrobaProduzida)}
                       </dd>
                     </div>
@@ -313,7 +336,7 @@ export default function SimulacaoResumo() {
                       <dt className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
                         Faturamento
                       </dt>
-                      <dd className="mt-1 text-sm font-semibold tabular-nums text-brand-900">
+                      <dd className="mt-0.5 text-sm font-semibold tabular-nums text-brand-900">
                         {fmtBRL(c.out.faturamentoTotal)}
                       </dd>
                     </div>
@@ -321,7 +344,7 @@ export default function SimulacaoResumo() {
                       <dt className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
                         Desembolsado
                       </dt>
-                      <dd className="mt-1 text-sm font-semibold tabular-nums text-brand-900">
+                      <dd className="mt-0.5 text-sm font-semibold tabular-nums text-brand-900">
                         {fmtBRL(c.out.totalDesembolsado)}
                       </dd>
                     </div>
