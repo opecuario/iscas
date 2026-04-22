@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { calcular } from "@/lib/calculations";
+import { calcularCria } from "@/lib/calculationsCria";
 import { fmtBRL, fmtPct } from "@/lib/format";
+import { TIPO_SIMULADOR_LABEL } from "@/lib/storage";
 import {
   adminListSimulacoes,
   type SimulacaoComDono,
@@ -111,15 +113,29 @@ export default function AdminSimulacoes() {
                 </tr>
               ) : (
                 filtradas.map((s) => {
-                  const out = calcular(s.inputs);
+                  const resultado =
+                    s.tipo === "cria"
+                      ? calcularCria(s.inputs)
+                      : calcular(s.inputs);
                   const finalizada = s.etapaAtual === "finalizado";
+                  const rotaForm =
+                    s.tipo === "cria"
+                      ? "/nova/cria"
+                      : "/nova/recria-engorda";
                   const href = finalizada
                     ? `/simulacao/${s.id}`
-                    : `/nova?id=${s.id}`;
+                    : `${rotaForm}?id=${s.id}`;
+                  const cabecas =
+                    s.tipo === "cria"
+                      ? s.inputs.qtdMatrizes || 0
+                      : s.inputs.qtdCabecas || 0;
                   return (
                     <tr key={s.id} className="transition hover:bg-brand-50/40">
                       <td className="px-4 py-3 font-medium text-brand-900">
-                        {s.nome}
+                        <div>{s.nome}</div>
+                        <div className="mt-0.5 text-[11px] font-medium text-brand-700">
+                          {TIPO_SIMULADOR_LABEL[s.tipo]}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <Link
@@ -146,19 +162,19 @@ export default function AdminSimulacoes() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right text-neutral-700">
-                        {s.inputs.qtdCabecas || 0}
+                        {cabecas}
                       </td>
                       <td
                         className={`px-4 py-3 text-right font-semibold ${
-                          out.lucro >= 0
+                          resultado.lucro >= 0
                             ? "text-emerald-700"
                             : "text-red-700"
                         }`}
                       >
-                        {fmtBRL(out.lucro)}
+                        {fmtBRL(resultado.lucro)}
                       </td>
                       <td className="px-4 py-3 text-right font-medium text-brand-900">
-                        {fmtPct(out.rentabilidadeAno)}
+                        {fmtPct(resultado.rentabilidadeAno)}
                       </td>
                       <td className="px-4 py-3 text-xs text-neutral-500">
                         {new Date(s.updatedAt).toLocaleDateString("pt-BR")}

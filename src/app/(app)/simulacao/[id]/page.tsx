@@ -25,9 +25,14 @@ const fmtGmd = (v: number) => (isFinite(v) ? NUM3.format(v) : "—");
 import {
   deleteSimulacao,
   getSimulacao,
+  type SimulacaoCria,
+  type SimulacaoRecriaEngorda,
   type SimulacaoSalva,
 } from "@/lib/storage";
+import { calcularCria } from "@/lib/calculationsCria";
+import ResultadosCriaPainel from "@/components/ResultadosCriaPainel";
 import type {
+  InputsBase,
   Outputs,
   TipoVariante,
   VarianteOverride,
@@ -63,7 +68,7 @@ export default function SimulacaoResumo() {
   }, [id]);
 
   const cenarios = useMemo<CenarioAtivo[]>(() => {
-    if (!sim) return [];
+    if (!sim || sim.tipo !== "recria_engorda") return [];
     const snap = snapshotBase(sim.inputs);
     const arr: CenarioAtivo[] = [
       {
@@ -116,7 +121,17 @@ export default function SimulacaoResumo() {
     );
   }
 
-  if (!sim || cenarios.length === 0) {
+  if (!sim) {
+    return (
+      <div className="p-10 text-sm text-neutral-500">Carregando simulação…</div>
+    );
+  }
+
+  if (sim.tipo === "cria") {
+    return <ResumoCria sim={sim} id={id} />;
+  }
+
+  if (cenarios.length === 0) {
     return (
       <div className="p-10 text-sm text-neutral-500">Carregando simulação…</div>
     );
@@ -928,7 +943,7 @@ function LinhaCen({
   );
 }
 
-function whatsappComContexto(sim: SimulacaoSalva, out: Outputs): string {
+function whatsappComContexto(sim: SimulacaoRecriaEngorda, out: Outputs): string {
   const base = "https://wa.me/556699852419";
   const lucroStr = fmtBRL(out.lucro);
   const rentStr = fmtPct(out.rentabilidadeAno);
@@ -995,7 +1010,7 @@ function BreakEvenSection({ cenario }: { cenario: CenarioAtivo }) {
   );
 }
 
-function RecomendacoesSection({ sim }: { sim: SimulacaoSalva }) {
+function RecomendacoesSection({ sim }: { sim: SimulacaoRecriaEngorda }) {
   const recs = useMemo(() => recomendacoes(sim.inputs), [sim.inputs]);
   if (recs.length === 0) return null;
   return (
@@ -1039,7 +1054,7 @@ function SensibilidadeSection({
   sim,
   cenario,
 }: {
-  sim: SimulacaoSalva;
+  sim: SimulacaoRecriaEngorda;
   cenario: CenarioAtivo;
 }) {
   const tabelas = useMemo(
@@ -1116,7 +1131,7 @@ function CurvaLucroSection({
   sim,
   cenario,
 }: {
-  sim: SimulacaoSalva;
+  sim: SimulacaoRecriaEngorda;
   cenario: CenarioAtivo;
 }) {
   const pontos = useMemo(
@@ -1182,7 +1197,7 @@ function FluxoCaixaSection({
   sim,
   cenario,
 }: {
-  sim: SimulacaoSalva;
+  sim: SimulacaoRecriaEngorda;
   cenario: CenarioAtivo;
 }) {
   const fc = useMemo(
@@ -1302,7 +1317,7 @@ function BenchmarksSection({
   inputs,
 }: {
   cenarios: CenarioAtivo[];
-  inputs: SimulacaoSalva["inputs"];
+  inputs: InputsBase;
 }) {
   const realista = cenarios[0];
   const mortalidade =
@@ -1534,3 +1549,73 @@ function FaseBloco({
     </>
   );
 }
+
+// ============================================================
+// Resumo da simulação de Cria
+// ============================================================
+function ResumoCria({ sim, id }: { sim: SimulacaoCria; id: string }) {
+  const router = useRouter();
+  const toast = useToast();
+  const out = useMemo(() => calcularCria(sim.inputs), [sim.inputs]);
+
+  async function excluir() {
+    if (!confirm("Tem certeza que deseja excluir esta simulação?")) return;
+    await deleteSimulacao(id);
+    toast.sucesso("Simulação excluída.");
+    router.replace("/");
+  }
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-10">
+      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <Link
+            href="/"
+            className="text-xs text-neutral-500 hover:text-brand-800"
+          >
+            ← Voltar ao dashboard
+          </Link>
+          <div className="mt-1 flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-brand-900">{sim.nome}</h1>
+            <span className="rounded bg-brand-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-brand-800">
+              Cria
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-neutral-600">
+            {fmtInt(sim.inputs.qtdMatrizes)} matrizes ·{" "}
+            {sim.inputs.areaHa ? `${sim.inputs.areaHa} ha · ` : ""}
+            {fmtInt(out.diasCiclo)} dias de ciclo
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={`/nova/cria?id=${sim.id}`}
+            className="rounded-md border border-brand-800 bg-white px-4 py-2 text-sm font-semibold text-brand-800 transition hover:bg-brand-50"
+          >
+            Editar
+          </Link>
+          <button
+            onClick={excluir}
+            className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
+          >
+            Excluir
+          </button>
+        </div>
+      </header>
+
+      <ResultadosCriaPainel inputs={sim.inputs} out={out} />
+
+      {sim.observacoes && (
+        <section className="mt-6 rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-brand-800">
+            Observações
+          </h2>
+          <p className="whitespace-pre-wrap text-sm text-neutral-700">
+            {sim.observacoes}
+          </p>
+        </section>
+      )}
+    </div>
+  );
+}
+

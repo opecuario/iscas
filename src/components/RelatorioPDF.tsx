@@ -64,11 +64,11 @@ function logoSrc(): string {
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 32,
+    paddingTop: 28,
     paddingBottom: 44,
-    paddingHorizontal: 32,
+    paddingHorizontal: 24,
     fontFamily: "Helvetica",
-    fontSize: 9,
+    fontSize: 11,
     color: NEUTRAL_900,
   },
   // ---- Header padrão (páginas internas) ----
@@ -81,42 +81,83 @@ const styles = StyleSheet.create({
     borderBottomColor: NEUTRAL_200,
     marginBottom: 14,
   },
-  headerLogo: { width: 90, height: 13 },
-  headerMeta: { fontSize: 7, color: NEUTRAL_500, textAlign: "right" },
+  headerLogo: { width: 110, height: 16 },
+  headerMeta: { fontSize: 9, color: NEUTRAL_500, textAlign: "right" },
   // ---- Capa ----
   capaLogoWrap: {
     alignItems: "center",
-    marginTop: 40,
-    marginBottom: 28,
+    marginTop: 18,
+    marginBottom: 18,
   },
-  capaLogo: { width: 280, height: 39.6 },
+  capaLogo: { width: 220, height: 31 },
   capaKicker: {
-    fontSize: 9,
+    fontSize: 10,
     color: NEUTRAL_500,
     textAlign: "center",
     letterSpacing: 2,
     marginBottom: 6,
   },
   capaTitle: {
-    fontSize: 26,
+    fontSize: 24,
     fontFamily: "Helvetica-Bold",
     color: BRAND_900,
     textAlign: "center",
-    marginBottom: 10,
+    marginBottom: 6,
   },
   capaMeta: {
-    fontSize: 11,
+    fontSize: 12,
     color: NEUTRAL_700,
     textAlign: "center",
-    marginBottom: 28,
+    marginBottom: 20,
   },
-  cardsRow: {
+  // Bloco "Resumo do ciclo" — visível em letras grandes na capa mobile
+  resumoZooWrap: {
+    borderWidth: 1,
+    borderColor: BRAND_100,
+    borderRadius: 6,
+    padding: 14,
+    marginBottom: 18,
+    backgroundColor: BRAND_50,
+  },
+  resumoZooTitulo: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    color: BRAND_800,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 10,
+  },
+  resumoZooGrid: {
     flexDirection: "row",
-    gap: 12,
-    marginTop: 6,
+    flexWrap: "wrap",
+  },
+  resumoZooItem: {
+    width: "50%",
+    paddingVertical: 6,
+    paddingRight: 6,
+  },
+  resumoZooLabel: {
+    fontSize: 9,
+    color: NEUTRAL_500,
+    marginBottom: 2,
+  },
+  resumoZooValor: {
+    fontSize: 14,
+    fontFamily: "Helvetica-Bold",
+    color: BRAND_900,
+  },
+  resumoZooNota: {
+    fontSize: 9,
+    color: NEUTRAL_700,
+    marginTop: 1,
+  },
+  // Cards de cenário empilhados (full width no portrait)
+  cardsStack: {
+    flexDirection: "column",
+    gap: 10,
+    marginTop: 4,
   },
   card: {
-    flex: 1,
     borderRadius: 6,
     borderWidth: 1,
     borderColor: NEUTRAL_200,
@@ -131,44 +172,44 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   cardHeadLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: "Helvetica-Bold",
     color: "#ffffff",
     textTransform: "uppercase",
     letterSpacing: 1,
   },
-  cardBody: { padding: 12 },
+  cardBody: { padding: 14 },
   cardLucroLabel: {
-    fontSize: 8,
+    fontSize: 10,
     color: NEUTRAL_500,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 2,
   },
   cardLucroValor: {
-    fontSize: 18,
+    fontSize: 24,
     fontFamily: "Helvetica-Bold",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   kvGrid: {
-    flexDirection: "column",
-    gap: 6,
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   kvRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    width: "50%",
+    paddingVertical: 5,
+    paddingRight: 8,
     borderTopWidth: 0.5,
     borderTopColor: NEUTRAL_200,
-    paddingTop: 4,
   },
-  kvLabel: { fontSize: 8.5, color: NEUTRAL_500 },
+  kvLabel: { fontSize: 9, color: NEUTRAL_500, marginBottom: 1 },
   kvValor: {
-    fontSize: 9.5,
+    fontSize: 12,
     fontFamily: "Helvetica-Bold",
     color: NEUTRAL_900,
   },
   capaCtaWrap: {
-    marginTop: 18,
+    marginTop: 16,
     padding: 12,
     backgroundColor: BRAND_50,
     borderRadius: 4,
@@ -176,47 +217,47 @@ const styles = StyleSheet.create({
     borderLeftColor: BRAND_800,
   },
   capaCtaTitle: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: "Helvetica-Bold",
     color: BRAND_900,
   },
   capaCtaText: {
-    fontSize: 9,
+    fontSize: 10,
     color: NEUTRAL_700,
-    marginTop: 2,
+    marginTop: 3,
     lineHeight: 1.4,
   },
   capaCtaWhats: {
-    fontSize: 9.5,
+    fontSize: 11,
     fontFamily: "Helvetica-Bold",
     color: BRAND_800,
-    marginTop: 4,
+    marginTop: 6,
   },
   // ---- Tabela ----
   simName: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: "Helvetica-Bold",
     color: BRAND_900,
     marginBottom: 2,
   },
   meta: {
-    fontSize: 9,
+    fontSize: 11,
     color: NEUTRAL_700,
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: "Helvetica-Bold",
     color: NEUTRAL_500,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: 6,
-    marginTop: 4,
+    marginBottom: 8,
+    marginTop: 6,
   },
   tableWrap: {
     borderWidth: 1,
     borderColor: NEUTRAL_200,
-    borderRadius: 3,
+    borderRadius: 4,
     overflow: "hidden",
     marginBottom: 10,
   },
@@ -228,7 +269,7 @@ const styles = StyleSheet.create({
     flex: 2.4,
     paddingVertical: 8,
     paddingHorizontal: 8,
-    fontSize: 7.5,
+    fontSize: 9,
     fontFamily: "Helvetica-Bold",
     color: NEUTRAL_500,
     textTransform: "uppercase",
@@ -238,11 +279,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     paddingHorizontal: 8,
-    fontSize: 8.5,
+    fontSize: 9.5,
     fontFamily: "Helvetica-Bold",
     color: "#ffffff",
     textTransform: "uppercase",
     letterSpacing: 0.6,
+    textAlign: "right",
   },
   sepRow: {
     flexDirection: "row",
@@ -253,9 +295,9 @@ const styles = StyleSheet.create({
     borderBottomColor: BRAND_100,
   },
   sepCell: {
-    paddingVertical: 4,
+    paddingVertical: 5,
     paddingHorizontal: 8,
-    fontSize: 7.5,
+    fontSize: 9,
     fontFamily: "Helvetica-Bold",
     color: BRAND_800,
     textTransform: "uppercase",
@@ -268,42 +310,44 @@ const styles = StyleSheet.create({
   },
   tdLabel: {
     flex: 2.4,
-    paddingVertical: 4,
+    paddingVertical: 5,
     paddingHorizontal: 8,
-    fontSize: 9,
+    fontSize: 10,
     color: NEUTRAL_700,
   },
   tdValor: {
     flex: 1,
-    paddingVertical: 4,
+    paddingVertical: 5,
     paddingHorizontal: 8,
-    fontSize: 9,
+    fontSize: 10,
     color: NEUTRAL_900,
     fontFamily: "Helvetica-Bold",
+    textAlign: "right",
   },
   tdLabelIndent: {
     flex: 2.4,
     paddingVertical: 3,
     paddingLeft: 24,
     paddingRight: 8,
-    fontSize: 8,
+    fontSize: 9,
     color: NEUTRAL_500,
   },
   tdValorIndent: {
     flex: 1,
     paddingVertical: 3,
     paddingHorizontal: 8,
-    fontSize: 8,
+    fontSize: 9,
     color: NEUTRAL_500,
+    textAlign: "right",
   },
   destacarRow: {
     backgroundColor: "#f0f7f3",
   },
   tdLabelDestaque: {
     flex: 2.4,
-    paddingVertical: 5,
+    paddingVertical: 6,
     paddingHorizontal: 8,
-    fontSize: 9,
+    fontSize: 11,
     fontFamily: "Helvetica-Bold",
     color: BRAND_900,
   },
@@ -317,9 +361,9 @@ const styles = StyleSheet.create({
   },
   tdLabelTotalizador: {
     flex: 2.4,
-    paddingVertical: 6,
+    paddingVertical: 7,
     paddingHorizontal: 8,
-    fontSize: 8.5,
+    fontSize: 10,
     fontFamily: "Helvetica-Bold",
     color: BRAND_900,
     textTransform: "uppercase",
@@ -327,224 +371,224 @@ const styles = StyleSheet.create({
   },
   tdValorTotalizador: {
     flex: 1,
-    paddingVertical: 6,
+    paddingVertical: 7,
     paddingHorizontal: 8,
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: "Helvetica-Bold",
     color: BRAND_900,
+    textAlign: "right",
   },
   positivo: { color: EMERALD_700, fontFamily: "Helvetica-Bold" },
   negativo: { color: RED_700, fontFamily: "Helvetica-Bold" },
-  unidade: { fontSize: 8, color: NEUTRAL_500, fontFamily: "Helvetica" },
+  unidade: { fontSize: 9, color: NEUTRAL_500, fontFamily: "Helvetica" },
   footer: {
     position: "absolute",
     bottom: 18,
-    left: 32,
-    right: 32,
+    left: 24,
+    right: 24,
     flexDirection: "row",
     justifyContent: "space-between",
     paddingTop: 6,
     borderTopWidth: 0.5,
     borderTopColor: NEUTRAL_200,
-    fontSize: 7,
+    fontSize: 8,
     color: NEUTRAL_500,
   },
   // ---- Analises: benchmarks / break-even / recomendacoes / sensibilidade ----
   subTitulo: {
-    fontSize: 7.5,
+    fontSize: 9,
     color: NEUTRAL_500,
-    marginBottom: 8,
+    marginBottom: 10,
     lineHeight: 1.4,
   },
   benchGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 12,
+    marginBottom: 14,
   },
   benchCard: {
-    width: "32%",
+    width: "48%",
+    marginHorizontal: "1%",
+    marginBottom: 8,
     borderWidth: 0.5,
     borderColor: NEUTRAL_200,
-    borderRadius: 3,
-    padding: 8,
+    borderRadius: 4,
+    padding: 10,
     backgroundColor: NEUTRAL_50,
   },
   benchRotulo: {
-    fontSize: 7.5,
+    fontSize: 9,
     fontFamily: "Helvetica-Bold",
     color: BRAND_800,
     textTransform: "uppercase",
     letterSpacing: 0.4,
-    marginBottom: 2,
+    marginBottom: 3,
   },
   benchValor: {
-    fontSize: 12,
+    fontSize: 16,
     fontFamily: "Helvetica-Bold",
     color: NEUTRAL_900,
   },
   benchTag: {
-    marginTop: 3,
+    marginTop: 5,
     alignSelf: "flex-start",
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 2,
-    fontSize: 7,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 3,
+    fontSize: 8,
     fontFamily: "Helvetica-Bold",
     textTransform: "uppercase",
     letterSpacing: 0.3,
   },
   beRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 10,
+    flexDirection: "column",
+    marginBottom: 12,
   },
   beCard: {
-    flex: 1,
     borderWidth: 0.5,
     borderColor: NEUTRAL_200,
-    borderRadius: 3,
-    padding: 8,
+    borderRadius: 4,
+    padding: 10,
+    marginBottom: 6,
     backgroundColor: NEUTRAL_50,
   },
   beLabel: {
-    fontSize: 7.5,
+    fontSize: 9,
     color: NEUTRAL_500,
     textTransform: "uppercase",
     letterSpacing: 0.4,
     marginBottom: 2,
   },
   beValor: {
-    fontSize: 13,
+    fontSize: 16,
     fontFamily: "Helvetica-Bold",
     color: NEUTRAL_900,
   },
   beNota: {
-    fontSize: 7,
+    fontSize: 9,
     color: NEUTRAL_500,
     marginTop: 2,
   },
   recList: {
-    marginBottom: 10,
+    marginBottom: 12,
   },
   recItem: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
     borderWidth: 0.5,
     borderColor: EMERALD_100,
     backgroundColor: "#ecfdf5",
-    borderRadius: 3,
-    marginBottom: 4,
+    borderRadius: 4,
+    marginBottom: 5,
   },
   recNum: {
-    width: 14,
-    height: 14,
-    fontSize: 8,
+    width: 18,
+    height: 18,
+    fontSize: 10,
     fontFamily: "Helvetica-Bold",
     color: "#ffffff",
     backgroundColor: EMERALD_700,
     textAlign: "center",
-    borderRadius: 7,
-    paddingTop: 2,
+    borderRadius: 9,
+    paddingTop: 3,
+    marginRight: 8,
   },
   recBody: { flex: 1 },
   recTitulo: {
-    fontSize: 9,
+    fontSize: 11,
     fontFamily: "Helvetica-Bold",
     color: BRAND_900,
   },
   recDesc: {
-    fontSize: 7.5,
+    fontSize: 9.5,
     color: NEUTRAL_700,
-    marginTop: 1,
+    marginTop: 2,
     lineHeight: 1.3,
   },
   recGanho: {
-    fontSize: 9,
+    fontSize: 11,
     fontFamily: "Helvetica-Bold",
     color: EMERALD_700,
+    marginLeft: 6,
   },
   sensRow: {
-    flexDirection: "row",
-    gap: 8,
+    flexDirection: "column",
   },
   sensCard: {
-    flex: 1,
     borderWidth: 0.5,
     borderColor: NEUTRAL_200,
-    borderRadius: 3,
-    padding: 6,
+    borderRadius: 4,
+    padding: 8,
+    marginBottom: 6,
     backgroundColor: NEUTRAL_50,
   },
   sensTituloBox: {
-    fontSize: 8,
+    fontSize: 10,
     fontFamily: "Helvetica-Bold",
     color: BRAND_800,
     textTransform: "uppercase",
     letterSpacing: 0.3,
-    marginBottom: 4,
+    marginBottom: 5,
   },
   sensHeader: {
     flexDirection: "row",
     borderBottomWidth: 0.5,
     borderBottomColor: NEUTRAL_200,
-    paddingBottom: 2,
+    paddingBottom: 3,
   },
   sensLinha: {
     flexDirection: "row",
-    paddingVertical: 2,
+    paddingVertical: 3,
   },
   sensZero: {
     fontFamily: "Helvetica-Bold",
   },
-  sensColVar: { flex: 1.1, fontSize: 7.5, color: NEUTRAL_500 },
-  sensColLucro: { flex: 1.6, fontSize: 7.5, textAlign: "right", color: NEUTRAL_700 },
-  sensColDelta: { flex: 1.4, fontSize: 7.5, textAlign: "right", color: NEUTRAL_500 },
+  sensColVar: { flex: 1.1, fontSize: 9.5, color: NEUTRAL_500 },
+  sensColLucro: { flex: 1.6, fontSize: 9.5, textAlign: "right", color: NEUTRAL_700 },
+  sensColDelta: { flex: 1.4, fontSize: 9.5, textAlign: "right", color: NEUTRAL_500 },
   obsBloco: {
     borderWidth: 0.5,
     borderColor: NEUTRAL_200,
-    borderRadius: 3,
-    padding: 10,
+    borderRadius: 4,
+    padding: 12,
     backgroundColor: NEUTRAL_50,
     marginBottom: 10,
   },
   obsTexto: {
-    fontSize: 9,
+    fontSize: 10,
     color: NEUTRAL_900,
     lineHeight: 1.4,
   },
   fcResumoRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 10,
+    flexDirection: "column",
+    marginBottom: 12,
   },
   fcResumoCard: {
-    flex: 1,
     borderWidth: 0.5,
-    borderRadius: 3,
-    padding: 8,
+    borderRadius: 4,
+    padding: 10,
+    marginBottom: 6,
   },
   fcResumoLabel: {
-    fontSize: 7.5,
+    fontSize: 9,
     textTransform: "uppercase",
     letterSpacing: 0.4,
     marginBottom: 2,
   },
   fcResumoValor: {
-    fontSize: 12,
+    fontSize: 16,
     fontFamily: "Helvetica-Bold",
   },
   fcResumoNota: {
-    fontSize: 7,
+    fontSize: 9,
     marginTop: 2,
   },
   fcTabela: {
     borderWidth: 0.5,
     borderColor: NEUTRAL_200,
-    borderRadius: 3,
+    borderRadius: 4,
     overflow: "hidden",
   },
   fcHeaderRow: {
@@ -554,9 +598,9 @@ const styles = StyleSheet.create({
     borderBottomColor: NEUTRAL_200,
   },
   fcTh: {
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    fontSize: 7.5,
+    paddingVertical: 5,
+    paddingHorizontal: 5,
+    fontSize: 8.5,
     fontFamily: "Helvetica-Bold",
     color: NEUTRAL_500,
     textTransform: "uppercase",
@@ -571,12 +615,12 @@ const styles = StyleSheet.create({
     backgroundColor: AMBER_100,
   },
   fcTd: {
-    paddingVertical: 3,
-    paddingHorizontal: 6,
-    fontSize: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 5,
+    fontSize: 9,
   },
-  fcColMes: { flex: 1, color: BRAND_900, fontFamily: "Helvetica-Bold" },
-  fcColNum: { flex: 2, textAlign: "right", color: NEUTRAL_700 },
+  fcColMes: { flex: 0.7, color: BRAND_900, fontFamily: "Helvetica-Bold" },
+  fcColNum: { flex: 1.4, textAlign: "right", color: NEUTRAL_700 },
 });
 
 interface Props {
@@ -607,7 +651,7 @@ export default function RelatorioPDF({
       subject="Simulação de recria/engorda"
     >
       {/* ======================= CAPA ======================= */}
-      <Page size="A4" orientation="landscape" style={styles.page}>
+      <Page size="A4" style={styles.page}>
         <View style={styles.capaLogoWrap}>
           <Image src={logo} style={styles.capaLogo} />
         </View>
@@ -615,12 +659,15 @@ export default function RelatorioPDF({
         <Text style={styles.capaKicker}>RELATÓRIO DE SIMULAÇÃO</Text>
         <Text style={styles.capaTitle}>{simNome}</Text>
         <Text style={styles.capaMeta}>
-          {fmtInt(inputs.qtdCabecas || 0)} cabeças  ·  {fmtNum(out0.areaMaxima || 0)} ha
+          {fmtInt(inputs.qtdCabecas || 0)} cabeças
+          {out0.areaMaxima > 0 ? `  ·  ${fmtNum(out0.areaMaxima)} ha` : ""}
           {"  ·  "}
           {fmtInt(out0.diasTotal || 0)} dias
         </Text>
 
-        <View style={styles.cardsRow}>
+        <ResumoZootecnico inputs={inputs} out={out0} />
+
+        <View style={styles.cardsStack}>
           {cenarios.map((c) => (
             <CenarioCard key={c.id} c={c} />
           ))}
@@ -641,7 +688,7 @@ export default function RelatorioPDF({
       </Page>
 
       {/* =================== PÁGINA DE ANÁLISES =================== */}
-      <Page size="A4" orientation="landscape" style={styles.page}>
+      <Page size="A4" style={styles.page}>
         <Header logo={logo} dataStr={dataStr} fixed />
 
         <Text style={styles.simName}>{simNome}</Text>
@@ -656,7 +703,7 @@ export default function RelatorioPDF({
       </Page>
 
       {/* =================== PÁGINA DE FLUXO DE CAIXA =================== */}
-      <Page size="A4" orientation="landscape" style={styles.page}>
+      <Page size="A4" style={styles.page}>
         <Header logo={logo} dataStr={dataStr} fixed />
 
         <Text style={styles.simName}>{simNome}</Text>
@@ -668,7 +715,7 @@ export default function RelatorioPDF({
       </Page>
 
       {/* =================== PÁGINA DETALHADA =================== */}
-      <Page size="A4" orientation="landscape" style={styles.page}>
+      <Page size="A4" style={styles.page}>
         <Header logo={logo} dataStr={dataStr} fixed />
 
         <Text style={styles.simName}>{simNome}</Text>
@@ -929,6 +976,81 @@ export default function RelatorioPDF({
         <Footer dataStr={dataStr} fixed />
       </Page>
     </Document>
+  );
+}
+
+function ResumoZootecnico({
+  inputs,
+  out,
+}: {
+  inputs: InputsBase;
+  out: Outputs;
+}) {
+  const ganhoCab = Math.max(0, out.pesoSaidaKg - inputs.pesoCompraKg);
+  const cabFinal = out.cabFinal;
+  const ganhoTotalLote = ganhoCab * cabFinal;
+  const meses = out.diasTotal / 30;
+  return (
+    <View style={styles.resumoZooWrap}>
+      <Text style={styles.resumoZooTitulo}>Resumo do ciclo</Text>
+      <View style={styles.resumoZooGrid}>
+        <View style={styles.resumoZooItem}>
+          <Text style={styles.resumoZooLabel}>Entraram</Text>
+          <Text style={styles.resumoZooValor}>
+            {fmtInt(inputs.qtdCabecas)} cab
+          </Text>
+          <Text style={styles.resumoZooNota}>
+            a {fmtInt(inputs.pesoCompraKg)} kg/cab
+          </Text>
+        </View>
+        <View style={styles.resumoZooItem}>
+          <Text style={styles.resumoZooLabel}>Saíram</Text>
+          <Text style={styles.resumoZooValor}>
+            {fmtInt(cabFinal)} cab
+          </Text>
+          <Text style={styles.resumoZooNota}>
+            a {fmtInt(out.pesoSaidaKg)} kg/cab ({fmtNum(out.pesoSaidaArroba)} @
+            carcaça)
+          </Text>
+        </View>
+        <View style={styles.resumoZooItem}>
+          <Text style={styles.resumoZooLabel}>Período</Text>
+          <Text style={styles.resumoZooValor}>
+            {fmtInt(out.diasTotal)} dias
+          </Text>
+          <Text style={styles.resumoZooNota}>≈ {fmtNum(meses)} meses</Text>
+        </View>
+        <View style={styles.resumoZooItem}>
+          <Text style={styles.resumoZooLabel}>GMD médio</Text>
+          <Text style={styles.resumoZooValor}>
+            {fmtGmd(out.gmdMedio)} kg/dia
+          </Text>
+          <Text style={styles.resumoZooNota}>
+            ganho de {fmtInt(ganhoCab)} kg/cab
+          </Text>
+        </View>
+        <View style={styles.resumoZooItem}>
+          <Text style={styles.resumoZooLabel}>Ganho do lote</Text>
+          <Text style={styles.resumoZooValor}>
+            {fmtInt(ganhoTotalLote)} kg
+          </Text>
+          <Text style={styles.resumoZooNota}>
+            {fmtNum(out.arrobasProduzidasTotal)} @ produzidas
+          </Text>
+        </View>
+        {out.areaMaxima > 0 && (
+          <View style={styles.resumoZooItem}>
+            <Text style={styles.resumoZooLabel}>Lotação média</Text>
+            <Text style={styles.resumoZooValor}>
+              {fmtNum(out.lotacaoMedia)} U.A./ha
+            </Text>
+            <Text style={styles.resumoZooNota}>
+              em {fmtNum(out.areaMaxima)} ha
+            </Text>
+          </View>
+        )}
+      </View>
+    </View>
   );
 }
 

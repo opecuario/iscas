@@ -4,13 +4,18 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { calcular } from "@/lib/calculations";
+import { calcularCria } from "@/lib/calculationsCria";
 import { fmtBRL, fmtPct } from "@/lib/format";
 import {
   adminGetUsuario,
   adminListSimulacoesPorUsuario,
   adminSetSimulacoesIlimitadas,
 } from "@/lib/admin";
-import type { SimulacaoSalva, Usuario } from "@/lib/storage";
+import {
+  TIPO_SIMULADOR_LABEL,
+  type SimulacaoSalva,
+  type Usuario,
+} from "@/lib/storage";
 
 export default function AdminUsuarioDetalhe() {
   const params = useParams<{ email: string }>();
@@ -132,17 +137,36 @@ export default function AdminUsuarioDetalhe() {
         ) : (
           <ul className="divide-y divide-neutral-100">
             {sims.map((s) => {
-              const out = calcular(s.inputs);
+              const out =
+                s.tipo === "cria"
+                  ? calcularCria(s.inputs)
+                  : calcular(s.inputs);
               const finalizada = s.etapaAtual === "finalizado";
+              const rotaForm =
+                s.tipo === "cria" ? "/nova/cria" : "/nova/recria-engorda";
+              const resumo =
+                s.tipo === "cria"
+                  ? `${s.inputs.qtdMatrizes || 0} matrizes${
+                      s.inputs.areaHa ? ` · ${s.inputs.areaHa} ha` : ""
+                    }`
+                  : `${s.inputs.qtdCabecas || 0} cab · ${
+                      s.inputs.fases.reduce(
+                        (m, f) => Math.max(m, f.areaHa),
+                        0
+                      ) || 0
+                    } ha`;
               return (
                 <li
                   key={s.id}
                   className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="truncate font-medium text-brand-900">
                         {s.nome}
+                      </span>
+                      <span className="shrink-0 rounded bg-brand-100 px-1.5 py-0.5 text-[11px] font-medium text-brand-800">
+                        {TIPO_SIMULADOR_LABEL[s.tipo]}
                       </span>
                       <span
                         className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] font-medium ${
@@ -155,9 +179,7 @@ export default function AdminUsuarioDetalhe() {
                       </span>
                     </div>
                     <div className="mt-1 text-xs text-neutral-500">
-                      {s.inputs.qtdCabecas || 0} cab ·{" "}
-                      {s.inputs.fases.reduce((m, f) => Math.max(m, f.areaHa), 0) || 0} ha
-                      · atualizada em{" "}
+                      {resumo} · atualizada em{" "}
                       {new Date(s.updatedAt).toLocaleDateString("pt-BR")}
                     </div>
                   </div>
@@ -188,7 +210,7 @@ export default function AdminUsuarioDetalhe() {
                       href={
                         finalizada
                           ? `/simulacao/${s.id}`
-                          : `/nova?id=${s.id}`
+                          : `${rotaForm}?id=${s.id}`
                       }
                       className="rounded-md border border-brand-800 bg-white px-3 py-1.5 text-xs font-semibold text-brand-800 hover:bg-brand-50"
                     >

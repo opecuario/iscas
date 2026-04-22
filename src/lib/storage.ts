@@ -1,7 +1,15 @@
 "use client";
 
 import { supabase } from "./supabase";
-import type { CustoExtra, Fase, InputsBase, VarianteOverride } from "./types";
+import { inputsCriaPadrao } from "./calculationsCria";
+import type {
+  CustoExtra,
+  Fase,
+  InputsBase,
+  InputsCria,
+  TipoSimulador,
+  VarianteOverride,
+} from "./types";
 
 export interface Usuario {
   id: string;
@@ -15,19 +23,36 @@ export interface Usuario {
 
 export type EtapaAtual = "realista" | "otimista" | "pessimista" | "finalizado";
 
-export interface SimulacaoSalva {
+interface SimulacaoBase {
   id: string;
   usuarioId: string;
   nome: string;
-  tipo: "recria_engorda";
   etapaAtual: EtapaAtual;
-  inputs: InputsBase;
-  otimista: VarianteOverride | null;
-  pessimista: VarianteOverride | null;
   observacoes?: string;
   createdAt: string;
   updatedAt: string;
 }
+
+export interface SimulacaoRecriaEngorda extends SimulacaoBase {
+  tipo: "recria_engorda";
+  inputs: InputsBase;
+  otimista: VarianteOverride | null;
+  pessimista: VarianteOverride | null;
+}
+
+export interface SimulacaoCria extends SimulacaoBase {
+  tipo: "cria";
+  inputs: InputsCria;
+  otimista: null;
+  pessimista: null;
+}
+
+export type SimulacaoSalva = SimulacaoRecriaEngorda | SimulacaoCria;
+
+export const TIPO_SIMULADOR_LABEL: Record<TipoSimulador, string> = {
+  recria_engorda: "Recria / engorda",
+  cria: "Cria",
+};
 
 export const LIMITE_SIMULACOES = 2;
 
@@ -151,7 +176,40 @@ function mapUsuario(row: UsuarioRow): Usuario {
   };
 }
 
+function migrarInputsCria(raw: unknown): InputsCria {
+  const padrao = inputsCriaPadrao();
+  if (!raw || typeof raw !== "object") return padrao;
+  const r = raw as Partial<InputsCria> & Record<string, unknown>;
+  return {
+    ...padrao,
+    ...r,
+    fasesReproducao: Array.isArray(r.fasesReproducao)
+      ? (r.fasesReproducao as InputsCria["fasesReproducao"])
+      : [],
+    custosExtras: Array.isArray(r.custosExtras)
+      ? (r.custosExtras as CustoExtra[])
+      : [],
+  };
+}
+
 function mapSimulacao(row: SimulacaoRow): SimulacaoSalva {
+  const tipo: TipoSimulador = row.tipo === "cria" ? "cria" : "recria_engorda";
+  if (tipo === "cria") {
+    const inputs = migrarInputsCria(row.inputs);
+    return {
+      id: row.id,
+      usuarioId: row.usuario_id,
+      nome: row.nome,
+      tipo: "cria",
+      etapaAtual: row.etapa_atual as EtapaAtual,
+      inputs,
+      otimista: null,
+      pessimista: null,
+      observacoes: extrairObservacoes(row.inputs),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
   const inputs = migrarInputs(row.inputs);
   return {
     id: row.id,

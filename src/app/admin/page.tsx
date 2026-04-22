@@ -8,6 +8,7 @@ import {
   type SimulacaoComDono,
 } from "@/lib/admin";
 import { calcular } from "@/lib/calculations";
+import { calcularCria } from "@/lib/calculationsCria";
 import { fmtBRL } from "@/lib/format";
 import type { Usuario } from "@/lib/storage";
 
@@ -70,7 +71,10 @@ export default function AdminOverview() {
         ) : (
           <ul className="divide-y divide-neutral-100">
             {recentes.map((s) => {
-              const out = calcular(s.inputs);
+              const lucro =
+                s.tipo === "cria"
+                  ? calcularCria(s.inputs).lucro
+                  : calcular(s.inputs).lucro;
               return (
                 <li
                   key={s.id}
@@ -95,10 +99,10 @@ export default function AdminOverview() {
                   </span>
                   <span
                     className={`w-28 text-right font-semibold ${
-                      out.lucro >= 0 ? "text-emerald-700" : "text-red-700"
+                      lucro >= 0 ? "text-emerald-700" : "text-red-700"
                     }`}
                   >
-                    {fmtBRL(out.lucro)}
+                    {fmtBRL(lucro)}
                   </span>
                 </li>
               );

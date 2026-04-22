@@ -25,10 +25,10 @@ export function adminGetUsuario(email: string): Promise<Usuario | null> {
   return getUsuarioPorEmail(email);
 }
 
-export interface SimulacaoComDono extends SimulacaoSalva {
+export type SimulacaoComDono = SimulacaoSalva & {
   donoEmail: string;
   donoNome: string;
-}
+};
 
 export async function adminListSimulacoes(): Promise<SimulacaoComDono[]> {
   // Usa listSimulacoes (que aplica migracao de shape antigo) + join em memoria

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LIMITE_SIMULACOES,
+  TIPO_SIMULADOR_LABEL,
   listSimulacoesDoUsuarioLogado,
   sair,
   type SimulacaoSalva,
@@ -20,6 +21,17 @@ const ETAPA_LABEL: Record<SimulacaoSalva["etapaAtual"], string> = {
   pessimista: "Pessimista",
   finalizado: "Finalizada",
 };
+
+function resumoSim(s: SimulacaoSalva): string {
+  if (s.tipo === "cria") {
+    const m = s.inputs.qtdMatrizes || 0;
+    const a = s.inputs.areaHa || 0;
+    return `${m} matrizes${a ? ` · ${a} ha` : ""}`;
+  }
+  const cab = s.inputs.qtdCabecas || 0;
+  const area = s.inputs.fases.reduce((m, f) => Math.max(m, f.areaHa), 0) || 0;
+  return `${cab} cab · ${area} ha`;
+}
 
 export default function Sidebar() {
   const usuario = useUsuario();
@@ -101,7 +113,7 @@ export default function Sidebar() {
 
       <div className="mt-6 flex-1 overflow-y-auto px-4 pb-4">
         <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
-          Simulações recria/engorda
+          Minhas simulações
         </h2>
         {simulacoes.length === 0 ? (
           <p className="rounded-md border border-dashed border-neutral-300 bg-neutral-50 p-3 text-xs text-neutral-500">
@@ -110,14 +122,18 @@ export default function Sidebar() {
         ) : (
           <ul className="space-y-2">
             {simulacoes.map((s) => {
+              const rotaForm =
+                s.tipo === "cria" ? "/nova/cria" : "/nova/recria-engorda";
               const ativa =
                 pathname === `/simulacao/${s.id}` ||
-                pathname === `/nova` && typeof window !== "undefined" &&
-                new URLSearchParams(window.location.search).get("id") === s.id;
+                (pathname === rotaForm &&
+                  typeof window !== "undefined" &&
+                  new URLSearchParams(window.location.search).get("id") ===
+                    s.id);
               const href =
                 s.etapaAtual === "finalizado"
                   ? `/simulacao/${s.id}`
-                  : `/nova?id=${s.id}`;
+                  : `${rotaForm}?id=${s.id}`;
               return (
                 <li key={s.id}>
                   <Link
@@ -131,7 +147,10 @@ export default function Sidebar() {
                     <div className="truncate font-medium text-brand-900">
                       {s.nome}
                     </div>
-                    <div className="mt-1 flex items-center gap-2 text-[11px]">
+                    <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px]">
+                      <span className="rounded bg-brand-100 px-1.5 py-0.5 font-medium text-brand-800">
+                        {TIPO_SIMULADOR_LABEL[s.tipo]}
+                      </span>
                       <span
                         className={`rounded px-1.5 py-0.5 font-medium ${
                           s.etapaAtual === "finalizado"
@@ -142,8 +161,7 @@ export default function Sidebar() {
                         {ETAPA_LABEL[s.etapaAtual]}
                       </span>
                       <span className="text-neutral-500">
-                        {s.inputs.qtdCabecas || 0} cab ·{" "}
-                        {s.inputs.fases.reduce((m, f) => Math.max(m, f.areaHa), 0) || 0} ha
+                        {resumoSim(s)}
                       </span>
                     </div>
                   </Link>

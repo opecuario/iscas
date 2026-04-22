@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LIMITE_SIMULACOES,
+  TIPO_SIMULADOR_LABEL,
   deleteSimulacao,
   duplicarSimulacao,
   listSimulacoesDoUsuarioLogado,
   type SimulacaoSalva,
 } from "@/lib/storage";
 import { calcular } from "@/lib/calculations";
-import { fmtBRL, fmtPct } from "@/lib/format";
+import { calcularCria } from "@/lib/calculationsCria";
+import { fmtBRL, fmtInt, fmtPct } from "@/lib/format";
 import { useUsuario } from "@/components/UsuarioProvider";
 import { useToast } from "@/components/ToastProvider";
 import { varianteEfetiva } from "@/lib/variantes";
@@ -63,7 +65,12 @@ export default function Dashboard() {
       return;
     }
     toast.sucesso("Cópia criada. Abrindo…");
-    if (res.novoId) router.push(`/nova?id=${res.novoId}`);
+    if (res.novoId) {
+      const original = simulacoes.find((x) => x.id === id);
+      const rota =
+        original?.tipo === "cria" ? "/nova/cria" : "/nova/recria-engorda";
+      router.push(`${rota}?id=${res.novoId}`);
+    }
   }
 
   const ilimitadas = usuario?.simulacoesIlimitadas ?? false;
@@ -147,29 +154,18 @@ function CardSimulacao({
   onDelete: () => void;
   onDuplicate: () => void;
 }) {
-  const otimistaEfetivo = varianteEfetiva(s.inputs, s.otimista);
-  const pessimistaEfetivo = varianteEfetiva(s.inputs, s.pessimista);
-  const resultados = [
-    { label: "Realista", out: calcular(s.inputs) },
-  ];
-  if (otimistaEfetivo) {
-    resultados.push({ label: "Otimista", out: calcular(s.inputs, otimistaEfetivo) });
-  }
-  if (pessimistaEfetivo) {
-    resultados.push({
-      label: "Pessimista",
-      out: calcular(s.inputs, pessimistaEfetivo),
-    });
-  }
-  const gridCols =
-    resultados.length === 1
-      ? "grid-cols-1"
-      : resultados.length === 2
-      ? "grid-cols-2"
-      : "grid-cols-3";
   const finalizada = s.etapaAtual === "finalizado";
-  const href = finalizada ? `/simulacao/${s.id}` : `/nova?id=${s.id}`;
+  const rotaForm =
+    s.tipo === "cria" ? "/nova/cria" : "/nova/recria-engorda";
+  const href = finalizada ? `/simulacao/${s.id}` : `${rotaForm}?id=${s.id}`;
   const dataFmt = new Date(s.updatedAt).toLocaleDateString("pt-BR");
+
+  const resumoLinha =
+    s.tipo === "cria"
+      ? `${fmtInt(s.inputs.qtdMatrizes || 0)} matrizes${
+          s.inputs.areaHa ? ` · ${s.inputs.areaHa} ha` : ""
+        }`
+      : `${s.inputs.qtdCabecas || 0} cab · ${areaTotalBase(s.inputs) || 0} ha`;
 
   return (
     <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm transition hover:shadow">
@@ -179,6 +175,9 @@ function CardSimulacao({
             {s.nome}
           </h3>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+            <span className="rounded bg-brand-100 px-1.5 py-0.5 font-medium text-brand-800">
+              {TIPO_SIMULADOR_LABEL[s.tipo]}
+            </span>
             <span
               className={`rounded px-1.5 py-0.5 font-medium ${
                 finalizada
@@ -189,8 +188,7 @@ function CardSimulacao({
               {ETAPA_LABEL[s.etapaAtual]}
             </span>
             <span className="text-neutral-500">
-              {s.inputs.qtdCabecas || 0} cab · {areaTotalBase(s.inputs) || 0} ha ·
-              atualizada em {dataFmt}
+              {resumoLinha} · atualizada em {dataFmt}
             </span>
           </div>
         </div>
@@ -215,40 +213,11 @@ function CardSimulacao({
         </div>
       </div>
 
-      <div className={`mt-4 grid ${gridCols} gap-2`}>
-        {resultados.map((r) => (
-          <div
-            key={r.label}
-            className="rounded-md border border-neutral-200 bg-neutral-50 p-2.5 text-xs"
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-brand-900">{r.label}</span>
-            </div>
-            <div className="mt-1.5">
-              <div className="text-[10px] text-neutral-500">Lucro</div>
-              <div
-                className={`font-semibold ${
-                  r.out.lucro >= 0 ? "text-emerald-700" : "text-red-700"
-                }`}
-              >
-                {fmtBRL(r.out.lucro)}
-              </div>
-            </div>
-            <div className="mt-1.5">
-              <div className="text-[10px] text-neutral-500">Rent. a.a.</div>
-              <div
-                className={`font-semibold ${
-                  r.out.rentabilidadeAno >= 0
-                    ? "text-brand-900"
-                    : "text-red-700"
-                }`}
-              >
-                {fmtPct(r.out.rentabilidadeAno)}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {s.tipo === "recria_engorda" ? (
+        <ResultadosRecriaBoxes s={s} />
+      ) : (
+        <ResultadosCriaBoxes s={s} />
+      )}
 
       <Link
         href={href}
@@ -256,6 +225,101 @@ function CardSimulacao({
       >
         {finalizada ? "Ver resumo" : "Continuar simulação"}
       </Link>
+    </div>
+  );
+}
+
+function ResultadosRecriaBoxes({
+  s,
+}: {
+  s: Extract<SimulacaoSalva, { tipo: "recria_engorda" }>;
+}) {
+  const otimistaEfetivo = varianteEfetiva(s.inputs, s.otimista);
+  const pessimistaEfetivo = varianteEfetiva(s.inputs, s.pessimista);
+  const resultados = [{ label: "Realista", out: calcular(s.inputs) }];
+  if (otimistaEfetivo) {
+    resultados.push({
+      label: "Otimista",
+      out: calcular(s.inputs, otimistaEfetivo),
+    });
+  }
+  if (pessimistaEfetivo) {
+    resultados.push({
+      label: "Pessimista",
+      out: calcular(s.inputs, pessimistaEfetivo),
+    });
+  }
+  const gridCols =
+    resultados.length === 1
+      ? "grid-cols-1"
+      : resultados.length === 2
+      ? "grid-cols-2"
+      : "grid-cols-3";
+  return (
+    <div className={`mt-4 grid ${gridCols} gap-2`}>
+      {resultados.map((r) => (
+        <BoxResumo
+          key={r.label}
+          label={r.label}
+          lucro={r.out.lucro}
+          rentAno={r.out.rentabilidadeAno}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ResultadosCriaBoxes({
+  s,
+}: {
+  s: Extract<SimulacaoSalva, { tipo: "cria" }>;
+}) {
+  const out = calcularCria(s.inputs);
+  return (
+    <div className="mt-4 grid grid-cols-1 gap-2">
+      <BoxResumo
+        label="Ciclo"
+        lucro={out.lucro}
+        rentAno={out.rentabilidadeAno}
+      />
+    </div>
+  );
+}
+
+function BoxResumo({
+  label,
+  lucro,
+  rentAno,
+}: {
+  label: string;
+  lucro: number;
+  rentAno: number;
+}) {
+  return (
+    <div className="rounded-md border border-neutral-200 bg-neutral-50 p-2.5 text-xs">
+      <div className="flex items-center justify-between">
+        <span className="font-semibold text-brand-900">{label}</span>
+      </div>
+      <div className="mt-1.5">
+        <div className="text-[10px] text-neutral-500">Lucro</div>
+        <div
+          className={`font-semibold ${
+            lucro >= 0 ? "text-emerald-700" : "text-red-700"
+          }`}
+        >
+          {fmtBRL(lucro)}
+        </div>
+      </div>
+      <div className="mt-1.5">
+        <div className="text-[10px] text-neutral-500">Rent. a.a.</div>
+        <div
+          className={`font-semibold ${
+            rentAno >= 0 ? "text-brand-900" : "text-red-700"
+          }`}
+        >
+          {fmtPct(rentAno)}
+        </div>
+      </div>
     </div>
   );
 }
