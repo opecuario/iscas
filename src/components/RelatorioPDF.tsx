@@ -728,16 +728,18 @@ export default function RelatorioPDF({
         <View style={styles.tableWrap}>
           <TableHeader cenarios={cenarios} fixed />
 
-          <DataRow label="Preço de compra (R$/@)">
-            {cenarios.map((c) => (
-              <ValorCell key={c.id} texto={fmtBRL(c.override.precoCompraArroba)} />
-            ))}
-          </DataRow>
-          <DataRow label="Preço de venda (R$/@)">
-            {cenarios.map((c) => (
-              <ValorCell key={c.id} texto={fmtBRL(c.override.precoVendaArroba)} />
-            ))}
-          </DataRow>
+          <View wrap={false}>
+            <DataRow label="Preço de compra (R$/@)">
+              {cenarios.map((c) => (
+                <ValorCell key={c.id} texto={fmtBRL(c.override.precoCompraArroba)} />
+              ))}
+            </DataRow>
+            <DataRow label="Preço de venda (R$/@)">
+              {cenarios.map((c) => (
+                <ValorCell key={c.id} texto={fmtBRL(c.override.precoVendaArroba)} />
+              ))}
+            </DataRow>
+          </View>
 
           {inputs.fases.map((f, idx) => (
             <FaseBloco
@@ -750,218 +752,224 @@ export default function RelatorioPDF({
             />
           ))}
 
-          <SeparadorRow label="Resumo do gado" />
-          <DataRow label="Cabeças compradas">
-            {cenarios.map((c) => (
-              <ValorCell key={c.id} texto={fmtInt(inputs.qtdCabecas)} unidade="cab" />
-            ))}
-          </DataRow>
-          <DataRow label="Cabeças vendidas">
-            {cenarios.map((c) => (
-              <ValorCell key={c.id} texto={fmtInt(c.out.cabFinal)} unidade="cab" />
-            ))}
-          </DataRow>
-          {cenarios.some((c) => inputs.qtdCabecas - c.out.cabFinal > 0.5) && (
-            <>
-              <DataRow label="Cabeças mortas">
-                {cenarios.map((c) => (
-                  <ValorCell
-                    key={c.id}
-                    texto={fmtInt(inputs.qtdCabecas - c.out.cabFinal)}
-                    unidade="cab"
-                  />
-                ))}
-              </DataRow>
-              <DataRow label="Mortalidade">
-                {cenarios.map((c) => (
-                  <ValorCell
-                    key={c.id}
-                    texto={fmtPct(
-                      inputs.qtdCabecas > 0
-                        ? (inputs.qtdCabecas - c.out.cabFinal) / inputs.qtdCabecas
-                        : 0
-                    )}
-                  />
-                ))}
-              </DataRow>
-            </>
-          )}
-          <DataRow label="Peso de entrada">
-            {cenarios.map((c) => (
-              <ValorCell key={c.id} texto={fmtInt(inputs.pesoCompraKg)} unidade="kg" />
-            ))}
-          </DataRow>
-          <DataRow label="Peso de saída">
-            {cenarios.map((c) => (
-              <ValorCell key={c.id} texto={fmtInt(c.out.pesoSaidaKg)} unidade="kg" />
-            ))}
-          </DataRow>
-          <DataRow label="Peso de saída (carcaça)">
-            {cenarios.map((c) => (
-              <ValorCell key={c.id} texto={fmtNum(c.out.pesoSaidaArroba)} unidade="@" />
-            ))}
-          </DataRow>
-          <DataRow label="Arrobas compradas">
-            {cenarios.map((c) => (
-              <ValorCell
-                key={c.id}
-                texto={fmtNum((inputs.qtdCabecas * inputs.pesoCompraKg) / 30)}
-                unidade="@"
-              />
-            ))}
-          </DataRow>
-          <DataRow label="Arrobas vendidas (carcaça)">
-            {cenarios.map((c) => (
-              <ValorCell
-                key={c.id}
-                texto={fmtNum(c.out.cabFinal * c.out.pesoSaidaArroba)}
-                unidade="@"
-              />
-            ))}
-          </DataRow>
-          <DataRow label="Período total">
-            {cenarios.map((c) => (
-              <ValorCell key={c.id} texto={fmtInt(c.out.diasTotal)} unidade="dias" />
-            ))}
-          </DataRow>
-          {temPasto && (
-            <>
-              <DataRow label="Área total (pasto)">
-                {cenarios.map((c) => (
-                  <ValorCell key={c.id} texto={fmtNum(c.out.areaMaxima)} unidade="ha" />
-                ))}
-              </DataRow>
-              <DataRow label="Lotação de entrada">
-                {cenarios.map((c) => (
-                  <ValorCell
-                    key={c.id}
-                    texto={fmtNum(c.out.lotacaoEntrada)}
-                    unidade="U.A./ha"
-                  />
-                ))}
-              </DataRow>
-              <DataRow label="Lotação média">
-                {cenarios.map((c) => (
-                  <ValorCell
-                    key={c.id}
-                    texto={fmtNum(c.out.lotacaoMedia)}
-                    unidade="U.A./ha"
-                  />
-                ))}
-              </DataRow>
-              <DataRow label="Lotação de saída">
-                {cenarios.map((c) => (
-                  <ValorCell
-                    key={c.id}
-                    texto={fmtNum(c.out.lotacaoSaida)}
-                    unidade="U.A./ha"
-                  />
-                ))}
-              </DataRow>
-            </>
-          )}
-
-          <SeparadorRow label="Custos detalhados" />
-          <DataRow label="Compra dos animais">
-            {cenarios.map((c) => (
-              <ValorCell key={c.id} texto={fmtBRL(c.out.totalCompra)} />
-            ))}
-          </DataRow>
-          <DataRow label="Suplemento (total das fases)">
-            {cenarios.map((c) => (
-              <ValorCell key={c.id} texto={fmtBRL(c.out.custoSuplementoTotal)} />
-            ))}
-          </DataRow>
-          <DataRow label="Operacionais (salários + sanidade + pastagem + taxas)">
-            {cenarios.map((c) => (
-              <ValorCell
-                key={c.id}
-                texto={fmtBRL(
-                  c.out.custoSalarios +
-                    c.out.custoSanidade +
-                    c.out.custoPastagem +
-                    c.out.custoTaxasVenda
-                )}
-              />
-            ))}
-          </DataRow>
-          {temExtras && (
-            <>
-              <DataRow label="Custos personalizados">
-                {cenarios.map((c) => (
-                  <ValorCell key={c.id} texto={fmtBRL(c.out.custosExtrasTotal)} />
-                ))}
-              </DataRow>
-              {cenarios[0].out.custosExtrasDetalhado.map((c, i) => (
-                <DataRow
-                  key={i}
-                  label={`↳ ${c.nome || `Custo #${i + 1}`}`}
-                  indentada
-                >
-                  {cenarios.map((cc) => (
+          <View wrap={false}>
+            <SeparadorRow label="Resumo do gado" />
+            <DataRow label="Cabeças compradas">
+              {cenarios.map((c) => (
+                <ValorCell key={c.id} texto={fmtInt(inputs.qtdCabecas)} unidade="cab" />
+              ))}
+            </DataRow>
+            <DataRow label="Cabeças vendidas">
+              {cenarios.map((c) => (
+                <ValorCell key={c.id} texto={fmtInt(c.out.cabFinal)} unidade="cab" />
+              ))}
+            </DataRow>
+            {cenarios.some((c) => inputs.qtdCabecas - c.out.cabFinal > 0.5) && (
+              <>
+                <DataRow label="Cabeças mortas">
+                  {cenarios.map((c) => (
                     <ValorCell
-                      key={cc.id}
-                      texto={fmtBRL(cc.out.custosExtrasDetalhado[i]?.valor ?? 0)}
-                      indentada
+                      key={c.id}
+                      texto={fmtInt(inputs.qtdCabecas - c.out.cabFinal)}
+                      unidade="cab"
                     />
                   ))}
                 </DataRow>
+                <DataRow label="Mortalidade">
+                  {cenarios.map((c) => (
+                    <ValorCell
+                      key={c.id}
+                      texto={fmtPct(
+                        inputs.qtdCabecas > 0
+                          ? (inputs.qtdCabecas - c.out.cabFinal) / inputs.qtdCabecas
+                          : 0
+                      )}
+                    />
+                  ))}
+                </DataRow>
+              </>
+            )}
+            <DataRow label="Peso de entrada">
+              {cenarios.map((c) => (
+                <ValorCell key={c.id} texto={fmtInt(inputs.pesoCompraKg)} unidade="kg" />
               ))}
-            </>
-          )}
-          <TotalizadorRow label="Total desembolsado">
-            {cenarios.map((c) => (
-              <Text key={c.id} style={styles.tdValorTotalizador}>
-                {fmtBRL(c.out.totalDesembolsado)}
-              </Text>
-            ))}
-          </TotalizadorRow>
-
-          <SeparadorRow label="Resultado" />
-          <DataRow label="Faturamento total">
-            {cenarios.map((c) => (
-              <ValorCell key={c.id} texto={fmtBRL(c.out.faturamentoTotal)} />
-            ))}
-          </DataRow>
-          <View style={[styles.dataRow, styles.destacarRow]}>
-            <Text style={styles.tdLabelDestaque}>Lucro total</Text>
-            {cenarios.map((c) => (
-              <Text
-                key={c.id}
-                style={[
-                  styles.tdValor,
-                  c.out.lucro >= 0 ? styles.positivo : styles.negativo,
-                ]}
-              >
-                {fmtBRL(c.out.lucro)}
-              </Text>
-            ))}
+            </DataRow>
+            <DataRow label="Peso de saída">
+              {cenarios.map((c) => (
+                <ValorCell key={c.id} texto={fmtInt(c.out.pesoSaidaKg)} unidade="kg" />
+              ))}
+            </DataRow>
+            <DataRow label="Peso de saída (carcaça)">
+              {cenarios.map((c) => (
+                <ValorCell key={c.id} texto={fmtNum(c.out.pesoSaidaArroba)} unidade="@" />
+              ))}
+            </DataRow>
+            <DataRow label="Arrobas compradas">
+              {cenarios.map((c) => (
+                <ValorCell
+                  key={c.id}
+                  texto={fmtNum((inputs.qtdCabecas * inputs.pesoCompraKg) / 30)}
+                  unidade="@"
+                />
+              ))}
+            </DataRow>
+            <DataRow label="Arrobas vendidas (carcaça)">
+              {cenarios.map((c) => (
+                <ValorCell
+                  key={c.id}
+                  texto={fmtNum(c.out.cabFinal * c.out.pesoSaidaArroba)}
+                  unidade="@"
+                />
+              ))}
+            </DataRow>
+            <DataRow label="Período total">
+              {cenarios.map((c) => (
+                <ValorCell key={c.id} texto={fmtInt(c.out.diasTotal)} unidade="dias" />
+              ))}
+            </DataRow>
+            {temPasto && (
+              <>
+                <DataRow label="Área total (pasto)">
+                  {cenarios.map((c) => (
+                    <ValorCell key={c.id} texto={fmtNum(c.out.areaMaxima)} unidade="ha" />
+                  ))}
+                </DataRow>
+                <DataRow label="Lotação de entrada">
+                  {cenarios.map((c) => (
+                    <ValorCell
+                      key={c.id}
+                      texto={fmtNum(c.out.lotacaoEntrada)}
+                      unidade="U.A./ha"
+                    />
+                  ))}
+                </DataRow>
+                <DataRow label="Lotação média">
+                  {cenarios.map((c) => (
+                    <ValorCell
+                      key={c.id}
+                      texto={fmtNum(c.out.lotacaoMedia)}
+                      unidade="U.A./ha"
+                    />
+                  ))}
+                </DataRow>
+                <DataRow label="Lotação de saída">
+                  {cenarios.map((c) => (
+                    <ValorCell
+                      key={c.id}
+                      texto={fmtNum(c.out.lotacaoSaida)}
+                      unidade="U.A./ha"
+                    />
+                  ))}
+                </DataRow>
+              </>
+            )}
           </View>
-          <DataRow label="Lucro por cabeça">
-            {cenarios.map((c) => (
-              <ValorCell key={c.id} texto={fmtBRL(c.out.lucroCab)} />
-            ))}
-          </DataRow>
-          <DataRow label="Lucro por hectare">
-            {cenarios.map((c) => (
-              <ValorCell key={c.id} texto={fmtBRL(c.out.lucroHa)} />
-            ))}
-          </DataRow>
-          <DataRow label="Rentabilidade da operação">
-            {cenarios.map((c) => (
-              <ValorCell key={c.id} texto={fmtPct(c.out.rentabilidadeOperacao)} />
-            ))}
-          </DataRow>
-          <DataRow label="Rentabilidade anual">
-            {cenarios.map((c) => (
-              <ValorCell key={c.id} texto={fmtPct(c.out.rentabilidadeAno)} />
-            ))}
-          </DataRow>
-          <DataRow label="Custo da @ produzida">
-            {cenarios.map((c) => (
-              <ValorCell key={c.id} texto={fmtBRL(c.out.custoArrobaProduzida)} />
-            ))}
-          </DataRow>
+
+          <View wrap={false}>
+            <SeparadorRow label="Custos detalhados" />
+            <DataRow label="Compra dos animais">
+              {cenarios.map((c) => (
+                <ValorCell key={c.id} texto={fmtBRL(c.out.totalCompra)} />
+              ))}
+            </DataRow>
+            <DataRow label="Suplemento (total das fases)">
+              {cenarios.map((c) => (
+                <ValorCell key={c.id} texto={fmtBRL(c.out.custoSuplementoTotal)} />
+              ))}
+            </DataRow>
+            <DataRow label="Operacionais (salários + sanidade + pastagem + taxas)">
+              {cenarios.map((c) => (
+                <ValorCell
+                  key={c.id}
+                  texto={fmtBRL(
+                    c.out.custoSalarios +
+                      c.out.custoSanidade +
+                      c.out.custoPastagem +
+                      c.out.custoTaxasVenda
+                  )}
+                />
+              ))}
+            </DataRow>
+            {temExtras && (
+              <>
+                <DataRow label="Custos personalizados">
+                  {cenarios.map((c) => (
+                    <ValorCell key={c.id} texto={fmtBRL(c.out.custosExtrasTotal)} />
+                  ))}
+                </DataRow>
+                {cenarios[0].out.custosExtrasDetalhado.map((c, i) => (
+                  <DataRow
+                    key={i}
+                    label={`↳ ${c.nome || `Custo #${i + 1}`}`}
+                    indentada
+                  >
+                    {cenarios.map((cc) => (
+                      <ValorCell
+                        key={cc.id}
+                        texto={fmtBRL(cc.out.custosExtrasDetalhado[i]?.valor ?? 0)}
+                        indentada
+                      />
+                    ))}
+                  </DataRow>
+                ))}
+              </>
+            )}
+            <TotalizadorRow label="Total desembolsado">
+              {cenarios.map((c) => (
+                <Text key={c.id} style={styles.tdValorTotalizador}>
+                  {fmtBRL(c.out.totalDesembolsado)}
+                </Text>
+              ))}
+            </TotalizadorRow>
+          </View>
+
+          <View wrap={false}>
+            <SeparadorRow label="Resultado" />
+            <DataRow label="Faturamento total">
+              {cenarios.map((c) => (
+                <ValorCell key={c.id} texto={fmtBRL(c.out.faturamentoTotal)} />
+              ))}
+            </DataRow>
+            <View style={[styles.dataRow, styles.destacarRow]}>
+              <Text style={styles.tdLabelDestaque}>Lucro total</Text>
+              {cenarios.map((c) => (
+                <Text
+                  key={c.id}
+                  style={[
+                    styles.tdValor,
+                    c.out.lucro >= 0 ? styles.positivo : styles.negativo,
+                  ]}
+                >
+                  {fmtBRL(c.out.lucro)}
+                </Text>
+              ))}
+            </View>
+            <DataRow label="Lucro por cabeça">
+              {cenarios.map((c) => (
+                <ValorCell key={c.id} texto={fmtBRL(c.out.lucroCab)} />
+              ))}
+            </DataRow>
+            <DataRow label="Lucro por hectare">
+              {cenarios.map((c) => (
+                <ValorCell key={c.id} texto={fmtBRL(c.out.lucroHa)} />
+              ))}
+            </DataRow>
+            <DataRow label="Rentabilidade da operação">
+              {cenarios.map((c) => (
+                <ValorCell key={c.id} texto={fmtPct(c.out.rentabilidadeOperacao)} />
+              ))}
+            </DataRow>
+            <DataRow label="Rentabilidade anual">
+              {cenarios.map((c) => (
+                <ValorCell key={c.id} texto={fmtPct(c.out.rentabilidadeAno)} />
+              ))}
+            </DataRow>
+            <DataRow label="Custo da @ produzida">
+              {cenarios.map((c) => (
+                <ValorCell key={c.id} texto={fmtBRL(c.out.custoArrobaProduzida)} />
+              ))}
+            </DataRow>
+          </View>
         </View>
 
         {observacoes && observacoes.trim().length > 0 && (
@@ -991,7 +999,7 @@ function ResumoZootecnico({
   const ganhoTotalLote = ganhoCab * cabFinal;
   const meses = out.diasTotal / 30;
   return (
-    <View style={styles.resumoZooWrap}>
+    <View style={styles.resumoZooWrap} wrap={false}>
       <Text style={styles.resumoZooTitulo}>Resumo do ciclo</Text>
       <View style={styles.resumoZooGrid}>
         <View style={styles.resumoZooItem}>
@@ -1237,7 +1245,7 @@ function FaseBloco({
   const confinada = !!calc0?.confinamento;
 
   return (
-    <>
+    <View wrap={false}>
       <SeparadorRow
         label={`Fase ${ordem} — ${faseNome || "Sem nome"}${
           confinada ? " (confinamento)" : ""
@@ -1344,7 +1352,7 @@ function FaseBloco({
           />
         ))}
       </DataRow>
-    </>
+    </View>
   );
 }
 
@@ -1469,7 +1477,7 @@ function RecomendacoesBloco({ inputs }: { inputs: InputsBase }) {
   const recs = recomendacoes(inputs);
   if (recs.length === 0) return null;
   return (
-    <View>
+    <View wrap={false}>
       <Text style={styles.sectionTitle}>Recomendações acionáveis</Text>
       <View style={styles.recList}>
         {recs.map((r, i) => (
@@ -1503,7 +1511,7 @@ function FluxoCaixaBloco({
         pra dimensionar capital de giro ou financiamento.
       </Text>
 
-      <View style={styles.fcResumoRow}>
+      <View style={styles.fcResumoRow} wrap={false}>
         <View
           style={[
             styles.fcResumoCard,
