@@ -151,103 +151,99 @@ const styles = StyleSheet.create({
     color: NEUTRAL_700,
     marginTop: 1,
   },
-  // Tabela comparativa de cenários (capa)
-  compWrap: {
-    borderWidth: 1,
-    borderColor: NEUTRAL_200,
-    borderRadius: 6,
-    overflow: "hidden",
-    marginTop: 4,
-    marginBottom: 14,
-    backgroundColor: "#ffffff",
-  },
-  compHeader: {
-    flexDirection: "row",
-    backgroundColor: NEUTRAL_50,
-  },
-  compHeaderLabel: {
-    flex: 2.4,
-    paddingVertical: 9,
-    paddingHorizontal: 10,
+  // Cards executivos de cenário (3 side-by-side)
+  resumoExecTitulo: {
     fontSize: 9,
     fontFamily: "Helvetica-Bold",
     color: NEUTRAL_500,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
+    marginBottom: 8,
   },
-  compHeaderCenario: {
-    flex: 1.6,
-    paddingVertical: 9,
-    paddingHorizontal: 10,
-    fontSize: 10,
+  cenariosRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 14,
+  },
+  cenCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: NEUTRAL_200,
+    borderRadius: 6,
+    overflow: "hidden",
+    backgroundColor: "#ffffff",
+  },
+  cenHeader: {
+    paddingVertical: 7,
+    paddingHorizontal: 6,
+    alignItems: "center",
+  },
+  cenHeaderLabel: {
+    fontSize: 9,
     fontFamily: "Helvetica-Bold",
     color: "#ffffff",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
-    textAlign: "right",
+    letterSpacing: 0.8,
+    textAlign: "center",
   },
-  compRow: {
-    flexDirection: "row",
-    borderTopWidth: 0.5,
-    borderTopColor: NEUTRAL_100,
+  cenBody: {
+    padding: 9,
   },
-  compLabel: {
-    flex: 2.4,
-    paddingVertical: 7,
-    paddingHorizontal: 10,
-    fontSize: 10,
-    color: NEUTRAL_700,
-  },
-  compValor: {
-    flex: 1.6,
-    paddingVertical: 7,
-    paddingHorizontal: 10,
-    fontSize: 11,
-    fontFamily: "Helvetica-Bold",
-    color: NEUTRAL_900,
-    textAlign: "right",
-  },
-  compRowDestaque: {
-    backgroundColor: "#f0f7f3",
-    borderTopWidth: 1,
-    borderTopColor: BRAND_100,
-    borderBottomWidth: 1,
-    borderBottomColor: BRAND_100,
-  },
-  compLabelDestaque: {
-    flex: 2.4,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    fontSize: 11,
-    fontFamily: "Helvetica-Bold",
-    color: BRAND_900,
+  cenLucroLabel: {
+    fontSize: 7.5,
+    color: NEUTRAL_500,
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    textAlign: "center",
+    marginBottom: 3,
   },
-  compValorDestaque: {
-    flex: 1.6,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
+  cenLucroValor: {
     fontSize: 15,
     fontFamily: "Helvetica-Bold",
-    textAlign: "right",
+    textAlign: "center",
   },
-  compSepRow: {
-    flexDirection: "row",
-    backgroundColor: BRAND_50,
-    borderTopWidth: 1,
-    borderTopColor: BRAND_100,
-    borderBottomWidth: 1,
-    borderBottomColor: BRAND_100,
+  cenSep: {
+    borderTopWidth: 0.5,
+    borderTopColor: NEUTRAL_200,
+    marginVertical: 8,
   },
-  compSepText: {
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
-    color: BRAND_800,
+  cenDestaqueBox: {
+    alignItems: "center",
+  },
+  cenDestaqueLabel: {
+    fontSize: 7.5,
+    color: NEUTRAL_500,
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    textAlign: "center",
+    marginBottom: 3,
+  },
+  cenDestaqueValor: {
+    fontSize: 12,
+    fontFamily: "Helvetica-Bold",
+    textAlign: "center",
+  },
+  cenGrid: {
+    flexDirection: "row",
+  },
+  cenGridItem: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 2,
+  },
+  cenGridLabel: {
+    fontSize: 7,
+    color: NEUTRAL_500,
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+    textAlign: "center",
+    marginBottom: 2,
+  },
+  cenGridValor: {
+    fontSize: 9.5,
+    fontFamily: "Helvetica-Bold",
+    color: NEUTRAL_900,
+    textAlign: "center",
   },
   capaCtaWrap: {
     marginTop: 16,
@@ -706,9 +702,9 @@ export default function RelatorioPDF({
           {fmtInt(out0.diasTotal || 0)} dias
         </Text>
 
-        <ResumoZootecnico inputs={inputs} out={out0} />
+        <ResumoExecutivo inputs={inputs} cenarios={cenarios} />
 
-        <ComparativoCenarios cenarios={cenarios} />
+        <ResumoZootecnico inputs={inputs} out={out0} />
 
         <View style={styles.capaCtaWrap} wrap={false}>
           <Text style={styles.capaCtaTitle}>
@@ -1121,147 +1117,127 @@ function ResumoZootecnico({
   );
 }
 
-function ComparativoCenarios({ cenarios }: { cenarios: CenarioPDF[] }) {
-  return (
-    <View style={styles.compWrap} wrap={false}>
-      {/* Cabeçalho */}
-      <View style={styles.compHeader}>
-        <Text style={styles.compHeaderLabel}>Indicador</Text>
-        {cenarios.map((c) => (
-          <Text
-            key={c.id}
-            style={[styles.compHeaderCenario, { backgroundColor: c.corHex }]}
-          >
-            {c.label}
-          </Text>
-        ))}
-      </View>
-
-      {/* Destaque: Lucro total */}
-      <View style={[styles.compRow, styles.compRowDestaque]}>
-        <Text style={styles.compLabelDestaque}>Lucro total</Text>
-        {cenarios.map((c) => (
-          <Text
-            key={c.id}
-            style={[
-              styles.compValorDestaque,
-              { color: c.out.lucro >= 0 ? EMERALD_700 : RED_700 },
-            ]}
-          >
-            {fmtBRL(c.out.lucro)}
-          </Text>
-        ))}
-      </View>
-
-      <CompRow
-        label="Lucro por cabeça"
-        valores={cenarios.map((c) => ({
-          texto: fmtBRL(c.out.lucroCab),
-          cor: c.out.lucro >= 0 ? EMERALD_700 : RED_700,
-        }))}
-      />
-      <CompRow
-        label="Rentabilidade anual"
-        valores={cenarios.map((c) => ({
-          texto: fmtPct(c.out.rentabilidadeAno),
-        }))}
-      />
-
-      <CompSeparator label="Premissas" />
-      <CompRow
-        label="Preço de compra"
-        valores={cenarios.map((c) => ({
-          texto: `${fmtBRL(c.override.precoCompraArroba)}/@`,
-        }))}
-      />
-      <CompRow
-        label="Preço de venda"
-        valores={cenarios.map((c) => ({
-          texto: `${fmtBRL(c.override.precoVendaArroba)}/@`,
-        }))}
-      />
-      <CompRow
-        label="GMD médio"
-        valores={cenarios.map((c) => ({
-          texto: `${fmtGmd(c.out.gmdMedio)} kg/dia`,
-        }))}
-      />
-      <CompRow
-        label="Peso de saída"
-        valores={cenarios.map((c) => ({
-          texto: `${fmtInt(c.out.pesoSaidaKg)} kg`,
-        }))}
-      />
-
-      <CompSeparator label="Indicadores financeiros" />
-      <CompRow
-        label="@ produzidas"
-        valores={cenarios.map((c) => ({
-          texto: `${fmtNum(c.out.arrobasProduzidasTotal)} @`,
-        }))}
-      />
-      <CompRow
-        label="Custo da @ produzida"
-        valores={cenarios.map((c) => ({
-          texto: fmtBRL(c.out.custoArrobaProduzida),
-        }))}
-      />
-      <CompRow
-        label="Preço de equilíbrio"
-        valores={cenarios.map((c) => ({
-          texto: `${fmtBRL(breakEvenPrecoVenda(c.out))}/@`,
-        }))}
-      />
-      <CompRow
-        label="Margem de segurança"
-        valores={cenarios.map((c) => {
-          const m = margemSegurancaVenda(
-            c.out,
-            c.override.precoVendaArroba
-          );
-          return {
-            texto: fmtPct(m),
-            cor:
-              m >= 0.15 ? EMERALD_700 : m >= 0 ? AMBER_700 : RED_700,
-          };
-        })}
-      />
-      <CompRow
-        label="Total desembolsado"
-        valores={cenarios.map((c) => ({
-          texto: fmtBRL(c.out.totalDesembolsado),
-        }))}
-      />
-    </View>
-  );
-}
-
-function CompRow({
-  label,
-  valores,
+function ResumoExecutivo({
+  inputs,
+  cenarios,
 }: {
-  label: string;
-  valores: { texto: string; cor?: string }[];
+  inputs: InputsBase;
+  cenarios: CenarioPDF[];
 }) {
   return (
-    <View style={styles.compRow} wrap={false}>
-      <Text style={styles.compLabel}>{label}</Text>
-      {valores.map((v, i) => (
-        <Text
-          key={i}
-          style={[styles.compValor, v.cor ? { color: v.cor } : {}]}
-        >
-          {v.texto}
-        </Text>
-      ))}
+    <View wrap={false}>
+      <Text style={styles.resumoExecTitulo}>Resumo executivo</Text>
+      <View style={styles.cenariosRow}>
+        {cenarios.map((c) => (
+          <CenarioCard key={c.id} c={c} inputs={inputs} />
+        ))}
+      </View>
     </View>
   );
 }
 
-function CompSeparator({ label }: { label: string }) {
+function CenarioCard({
+  c,
+  inputs,
+}: {
+  c: CenarioPDF;
+  inputs: InputsBase;
+}) {
+  const lucroPos = c.out.lucro >= 0;
+  const lucroColor = lucroPos ? EMERALD_700 : RED_700;
+  const rentColor =
+    c.out.rentabilidadeAno >= 0 ? EMERALD_700 : RED_700;
+  const lucroCabColor = c.out.lucroCab >= 0 ? EMERALD_700 : RED_700;
   return (
-    <View style={styles.compSepRow} wrap={false}>
-      <Text style={styles.compSepText}>{label}</Text>
+    <View style={styles.cenCard} wrap={false}>
+      <View style={[styles.cenHeader, { backgroundColor: c.corHex }]}>
+        <Text style={styles.cenHeaderLabel}>Cenário {c.label}</Text>
+      </View>
+      <View style={styles.cenBody}>
+        <Text style={styles.cenLucroLabel}>Lucro total</Text>
+        <Text style={[styles.cenLucroValor, { color: lucroColor }]}>
+          {fmtBRL(c.out.lucro)}
+        </Text>
+
+        <View style={styles.cenSep} />
+
+        <View style={styles.cenDestaqueBox}>
+          <Text style={styles.cenDestaqueLabel}>Rentab. ao ano</Text>
+          <Text style={[styles.cenDestaqueValor, { color: rentColor }]}>
+            {fmtPct(c.out.rentabilidadeAno)}
+          </Text>
+        </View>
+
+        <View style={styles.cenSep} />
+
+        <View style={styles.cenGrid}>
+          <View style={styles.cenGridItem}>
+            <Text style={styles.cenGridLabel}>Lucro/cab</Text>
+            <Text
+              style={[styles.cenGridValor, { color: lucroCabColor }]}
+            >
+              {fmtBRL(c.out.lucroCab)}
+            </Text>
+          </View>
+          <View style={styles.cenGridItem}>
+            <Text style={styles.cenGridLabel}>Custo da @ produzida</Text>
+            <Text style={styles.cenGridValor}>
+              {fmtBRL(c.out.custoArrobaProduzida)}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.cenSep} />
+
+        <View style={styles.cenGrid}>
+          <View style={styles.cenGridItem}>
+            <Text style={styles.cenGridLabel}>Faturamento</Text>
+            <Text style={styles.cenGridValor}>
+              {fmtBRL(c.out.faturamentoTotal)}
+            </Text>
+          </View>
+          <View style={styles.cenGridItem}>
+            <Text style={styles.cenGridLabel}>Desembolsado</Text>
+            <Text style={styles.cenGridValor}>
+              {fmtBRL(c.out.totalDesembolsado)}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.cenSep} />
+
+        <View style={styles.cenGrid}>
+          <View style={styles.cenGridItem}>
+            <Text style={styles.cenGridLabel}>Preço compra/@</Text>
+            <Text style={styles.cenGridValor}>
+              {fmtBRL(c.override.precoCompraArroba)}
+            </Text>
+          </View>
+          <View style={styles.cenGridItem}>
+            <Text style={styles.cenGridLabel}>Preço venda/@</Text>
+            <Text style={styles.cenGridValor}>
+              {fmtBRL(c.override.precoVendaArroba)}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.cenSep} />
+
+        <View style={styles.cenGrid}>
+          <View style={styles.cenGridItem}>
+            <Text style={styles.cenGridLabel}>Cabeças</Text>
+            <Text style={styles.cenGridValor}>
+              {fmtInt(inputs.qtdCabecas)}
+            </Text>
+          </View>
+          <View style={styles.cenGridItem}>
+            <Text style={styles.cenGridLabel}>GMD médio</Text>
+            <Text style={styles.cenGridValor}>
+              {fmtGmd(c.out.gmdMedio)} kg/d
+            </Text>
+          </View>
+        </View>
+      </View>
     </View>
   );
 }
