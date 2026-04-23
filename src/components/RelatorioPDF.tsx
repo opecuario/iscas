@@ -867,25 +867,40 @@ export default function RelatorioPDF({
 
           <View wrap={false}>
             <SeparadorRow label="Custos detalhados" />
-            <DataRow label="Compra dos animais">
-              {cenarios.map((c) => (
-                <ValorCell key={c.id} texto={fmtBRL(c.out.totalCompra)} />
-              ))}
+            <DataRow label="Compra dos animais (boi)">
+              {cenarios.map((c) => {
+                const custoBoi =
+                  inputs.qtdCabecas *
+                  (inputs.pesoCompraKg / 30) *
+                  c.override.precoCompraArroba;
+                return <ValorCell key={c.id} texto={fmtBRL(custoBoi)} />;
+              })}
             </DataRow>
+            {inputs.freteComissaoCab > 0 && (
+              <DataRow label="Frete e comissão">
+                {cenarios.map((c) => (
+                  <ValorCell
+                    key={c.id}
+                    texto={fmtBRL(
+                      inputs.qtdCabecas * inputs.freteComissaoCab
+                    )}
+                  />
+                ))}
+              </DataRow>
+            )}
             <DataRow label="Suplemento (total das fases)">
               {cenarios.map((c) => (
                 <ValorCell key={c.id} texto={fmtBRL(c.out.custoSuplementoTotal)} />
               ))}
             </DataRow>
-            <DataRow label="Operacionais (salários + sanidade + pastagem + taxas)">
+            <DataRow label="Operacionais (salários + sanidade + pastagem)">
               {cenarios.map((c) => (
                 <ValorCell
                   key={c.id}
                   texto={fmtBRL(
                     c.out.custoSalarios +
                       c.out.custoSanidade +
-                      c.out.custoPastagem +
-                      c.out.custoTaxasVenda
+                      c.out.custoPastagem
                   )}
                 />
               ))}
@@ -913,6 +928,13 @@ export default function RelatorioPDF({
                   </DataRow>
                 ))}
               </>
+            )}
+            {cenarios.some((c) => c.out.custoTaxasVenda > 0) && (
+              <DataRow label="Taxas de venda / abate">
+                {cenarios.map((c) => (
+                  <ValorCell key={c.id} texto={fmtBRL(c.out.custoTaxasVenda)} />
+                ))}
+              </DataRow>
             )}
             <TotalizadorRow label="Total desembolsado">
               {cenarios.map((c) => (
