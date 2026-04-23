@@ -254,7 +254,12 @@ export function fluxoCaixaMensal(
     caixaAcum += m.saldoMes;
     m.desembolsadoAcumulado = desemAcum;
     m.caixaAcumulado = caixaAcum;
-    const necessidade = -caixaAcum; // positivo = déficit
+    // A receita de venda só acontece no fim do mês (depois de quitar os
+    // custos desse mês). O pico de necessidade de caixa precisa olhar o
+    // saldo ANTES da receita entrar — senão o pico fica disfarçado pelo
+    // faturamento do último mês.
+    const caixaAntesDaReceita = caixaAcum - m.receita;
+    const necessidade = -caixaAntesDaReceita; // positivo = déficit
     if (necessidade > picoNecessidade) {
       picoNecessidade = necessidade;
       mesPico = m.mes;
