@@ -246,29 +246,27 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   capaCtaWrap: {
-    marginTop: 16,
-    padding: 12,
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     backgroundColor: BRAND_50,
     borderRadius: 4,
     borderLeftWidth: 3,
     borderLeftColor: BRAND_800,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
   },
-  capaCtaTitle: {
-    fontSize: 12,
-    fontFamily: "Helvetica-Bold",
-    color: BRAND_900,
-  },
-  capaCtaText: {
+  capaCtaTexto: {
     fontSize: 10,
-    color: NEUTRAL_700,
-    marginTop: 3,
-    lineHeight: 1.4,
+    color: BRAND_900,
+    flexShrink: 1,
   },
   capaCtaWhats: {
     fontSize: 11,
     fontFamily: "Helvetica-Bold",
     color: BRAND_800,
-    marginTop: 6,
   },
   // ---- Tabela ----
   simName: {
@@ -504,7 +502,8 @@ const styles = StyleSheet.create({
   beNota: {
     fontSize: 9,
     color: NEUTRAL_500,
-    marginTop: 2,
+    marginTop: 4,
+    lineHeight: 1.4,
   },
   recList: {
     marginBottom: 12,
@@ -707,12 +706,9 @@ export default function RelatorioPDF({
         <ResumoZootecnico inputs={inputs} out={out0} />
 
         <View style={styles.capaCtaWrap} wrap={false}>
-          <Text style={styles.capaCtaTitle}>
-            Quer melhorar os resultados desta operação?
-          </Text>
-          <Text style={styles.capaCtaText}>
-            Nossa consultoria ajuda você a transformar esses cenários em decisões
-            concretas de manejo, nutrição e compra/venda para elevar o retorno.
+          <Text style={styles.capaCtaTexto}>
+            Quer transformar esses números em decisões concretas? Fale com a
+            consultoria O Pecuário.
           </Text>
           <Text style={styles.capaCtaWhats}>WhatsApp: (66) 9985-2419</Text>
         </View>
@@ -1586,19 +1582,28 @@ function BreakEvenBloco({ cenarioRealista }: { cenarioRealista: CenarioPDF }) {
         <View style={styles.beCard}>
           <Text style={styles.beLabel}>Preço de equilíbrio</Text>
           <Text style={styles.beValor}>{fmtBRL(be)}</Text>
-          <Text style={styles.beNota}>R$/@ de venda que zera o lucro</Text>
+          <Text style={styles.beNota}>
+            É até onde a @ pode cair sem você ter prejuízo. Abaixo desse valor
+            a operação fica no vermelho.
+          </Text>
         </View>
         <View style={styles.beCard}>
           <Text style={styles.beLabel}>Preço de venda atual</Text>
           <Text style={styles.beValor}>{fmtBRL(precoVenda)}</Text>
-          <Text style={styles.beNota}>Cenário realista</Text>
+          <Text style={styles.beNota}>
+            Preço em R$/@ usado no cenário realista. Quanto maior a distância
+            para o preço de equilíbrio, mais seguro está o negócio.
+          </Text>
         </View>
         <View style={styles.beCard}>
           <Text style={styles.beLabel}>Margem de segurança</Text>
           <Text style={[styles.beValor, { color: margemCor }]}>
             {fmtPct(margem)}
           </Text>
-          <Text style={styles.beNota}>Queda máxima antes de prejuízo</Text>
+          <Text style={styles.beNota}>
+            Quanto o preço de venda pode cair antes de zerar o lucro. Acima de
+            15% é considerado uma folga saudável.
+          </Text>
         </View>
       </View>
     </View>
