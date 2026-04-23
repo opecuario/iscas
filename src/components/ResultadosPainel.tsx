@@ -53,7 +53,7 @@ export default function ResultadosPainel({
       )}
 
       {/* Fechamento financeiro */}
-      <FechamentoFinanceiro out={out} cab={cab} />
+      <FechamentoFinanceiro out={out} cab={cab} inputs={inputs} />
 
       {/* Resumo do gado */}
       <Grupo titulo="Resumo do gado">
@@ -111,11 +111,28 @@ export default function ResultadosPainel({
   );
 }
 
-function FechamentoFinanceiro({ out, cab }: { out: Outputs; cab: number }) {
+function FechamentoFinanceiro({
+  out,
+  cab,
+  inputs,
+}: {
+  out: Outputs;
+  cab: number;
+  inputs: InputsBase;
+}) {
   const porCab = (v: number) => v / Math.max(cab, 1);
 
+  const custoBoi =
+    inputs.qtdCabecas *
+    (inputs.pesoCompraKg / 30) *
+    inputs.precoCompraArroba;
+  const freteComissaoTotal = inputs.qtdCabecas * inputs.freteComissaoCab;
+
   const linhasSaida: { label: string; total: number; extra?: string }[] = [
-    { label: "Compra dos animais", total: out.totalCompra },
+    { label: "Compra dos animais (boi)", total: custoBoi },
+    ...(freteComissaoTotal > 0
+      ? [{ label: "Frete e comissão", total: freteComissaoTotal }]
+      : []),
     { label: "Salários", total: out.custoSalarios },
     { label: "Sanidade", total: out.custoSanidade },
     { label: "Pastagem", total: out.custoPastagem },
@@ -124,7 +141,9 @@ function FechamentoFinanceiro({ out, cab }: { out: Outputs; cab: number }) {
       label: c.nome || `Outro custo #${i + 1}`,
       total: c.valor,
     })),
-    { label: "Taxas de venda", total: out.custoTaxasVenda },
+    ...(out.custoTaxasVenda > 0
+      ? [{ label: "Taxas de venda / abate", total: out.custoTaxasVenda }]
+      : []),
   ];
 
   const totalDesembolsado = out.totalDesembolsado;

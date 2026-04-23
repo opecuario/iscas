@@ -676,12 +676,27 @@ export default function SimulacaoResumo() {
                 colSpan={cenarios.length + 1}
               />
               <LinhaCen
-                label="Compra dos animais"
+                label="Compra dos animais (boi)"
                 cenarios={cenarios}
-                pick={(c) => c.out.totalCompra}
+                pick={(c) =>
+                  sim.inputs.qtdCabecas *
+                  (sim.inputs.pesoCompraKg / 30) *
+                  c.override.precoCompraArroba
+                }
                 fmt={fmtBRL}
                 cenarioMobile={cenarioMobile}
               />
+              {sim.inputs.freteComissaoCab > 0 && (
+                <LinhaCen
+                  label="Frete e comissão"
+                  cenarios={cenarios}
+                  pick={() =>
+                    sim.inputs.qtdCabecas * sim.inputs.freteComissaoCab
+                  }
+                  fmt={fmtBRL}
+                  cenarioMobile={cenarioMobile}
+                />
+              )}
               <LinhaCen
                 label="Suplemento (total das fases)"
                 cenarios={cenarios}
@@ -690,13 +705,12 @@ export default function SimulacaoResumo() {
                 cenarioMobile={cenarioMobile}
               />
               <LinhaCen
-                label="Operacionais (salários + sanidade + pastagem + taxas)"
+                label="Operacionais (salários + sanidade + pastagem)"
                 cenarios={cenarios}
                 pick={(c) =>
                   c.out.custoSalarios +
                   c.out.custoSanidade +
-                  c.out.custoPastagem +
-                  c.out.custoTaxasVenda
+                  c.out.custoPastagem
                 }
                 fmt={fmtBRL}
                 cenarioMobile={cenarioMobile}
@@ -724,6 +738,15 @@ export default function SimulacaoResumo() {
                     />
                   ))}
                 </>
+              )}
+              {cenarios.some((c) => c.out.custoTaxasVenda > 0) && (
+                <LinhaCen
+                  label="Taxas de venda / abate"
+                  cenarios={cenarios}
+                  pick={(c) => c.out.custoTaxasVenda}
+                  fmt={fmtBRL}
+                  cenarioMobile={cenarioMobile}
+                />
               )}
               <LinhaCen
                 label="Total desembolsado"
