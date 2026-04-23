@@ -129,7 +129,7 @@ function FechamentoFinanceiro({
   const freteComissaoTotal = inputs.qtdCabecas * inputs.freteComissaoCab;
 
   const linhasSaida: { label: string; total: number; extra?: string }[] = [
-    { label: "Compra dos animais (boi)", total: custoBoi },
+    { label: "Compra dos animais", total: custoBoi },
     ...(freteComissaoTotal > 0
       ? [{ label: "Frete e comissão", total: freteComissaoTotal }]
       : []),

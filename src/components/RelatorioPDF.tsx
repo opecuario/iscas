@@ -867,7 +867,7 @@ export default function RelatorioPDF({
 
           <View wrap={false}>
             <SeparadorRow label="Custos detalhados" />
-            <DataRow label="Compra dos animais (boi)">
+            <DataRow label="Compra dos animais">
               {cenarios.map((c) => {
                 const custoBoi =
                   inputs.qtdCabecas *

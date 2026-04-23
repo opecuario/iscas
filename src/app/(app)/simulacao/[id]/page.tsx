@@ -676,7 +676,7 @@ export default function SimulacaoResumo() {
                 colSpan={cenarios.length + 1}
               />
               <LinhaCen
-                label="Compra dos animais (boi)"
+                label="Compra dos animais"
                 cenarios={cenarios}
                 pick={(c) =>
                   sim.inputs.qtdCabecas *
