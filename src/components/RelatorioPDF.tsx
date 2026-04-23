@@ -247,26 +247,29 @@ const styles = StyleSheet.create({
   },
   capaCtaWrap: {
     marginTop: 10,
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 12,
     backgroundColor: BRAND_50,
     borderRadius: 4,
     borderLeftWidth: 3,
     borderLeftColor: BRAND_800,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
+  },
+  capaCtaTitulo: {
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    color: BRAND_900,
   },
   capaCtaTexto: {
     fontSize: 10,
-    color: BRAND_900,
-    flexShrink: 1,
+    color: NEUTRAL_700,
+    marginTop: 3,
+    lineHeight: 1.4,
   },
   capaCtaWhats: {
     fontSize: 11,
     fontFamily: "Helvetica-Bold",
     color: BRAND_800,
+    marginTop: 4,
   },
   // ---- Tabela ----
   simName: {
@@ -706,9 +709,12 @@ export default function RelatorioPDF({
         <ResumoZootecnico inputs={inputs} out={out0} />
 
         <View style={styles.capaCtaWrap} wrap={false}>
+          <Text style={styles.capaCtaTitulo}>
+            Quer transformar esses números em decisões concretas?
+          </Text>
           <Text style={styles.capaCtaTexto}>
-            Quer transformar esses números em decisões concretas? Fale com a
-            consultoria O Pecuário.
+            Fale com a consultoria O Pecuário — ajudamos você a ajustar
+            manejo, nutrição e compra/venda para elevar o retorno.
           </Text>
           <Text style={styles.capaCtaWhats}>WhatsApp: (66) 9985-2419</Text>
         </View>
