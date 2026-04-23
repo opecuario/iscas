@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     backgroundColor: BRAND_50,
   },
   resumoZooTitulo: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: "Helvetica-Bold",
     color: BRAND_800,
     textTransform: "uppercase",
@@ -133,21 +133,21 @@ const styles = StyleSheet.create({
   },
   resumoZooItem: {
     width: "50%",
-    paddingVertical: 6,
+    paddingVertical: 7,
     paddingRight: 6,
   },
   resumoZooLabel: {
-    fontSize: 9,
+    fontSize: 10,
     color: NEUTRAL_500,
     marginBottom: 2,
   },
   resumoZooValor: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: "Helvetica-Bold",
     color: BRAND_900,
   },
   resumoZooNota: {
-    fontSize: 9,
+    fontSize: 10,
     color: NEUTRAL_700,
     marginTop: 1,
   },
@@ -180,16 +180,43 @@ const styles = StyleSheet.create({
   },
   cardBody: { padding: 14 },
   cardLucroLabel: {
-    fontSize: 10,
+    fontSize: 11,
     color: NEUTRAL_500,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 2,
   },
   cardLucroValor: {
-    fontSize: 24,
+    fontSize: 28,
     fontFamily: "Helvetica-Bold",
+    marginBottom: 10,
+  },
+  cardSubMetrics: {
+    flexDirection: "row",
     marginBottom: 12,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: NEUTRAL_200,
+  },
+  cardSubMetric: { width: "50%", paddingRight: 8 },
+  cardSubLabel: {
+    fontSize: 9,
+    color: NEUTRAL_500,
+    marginBottom: 1,
+  },
+  cardSubValor: {
+    fontSize: 16,
+    fontFamily: "Helvetica-Bold",
+    color: NEUTRAL_900,
+  },
+  cardSecTitulo: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: BRAND_800,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginTop: 10,
+    marginBottom: 6,
   },
   kvGrid: {
     flexDirection: "row",
@@ -202,9 +229,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: NEUTRAL_200,
   },
-  kvLabel: { fontSize: 9, color: NEUTRAL_500, marginBottom: 1 },
+  kvLabel: { fontSize: 10, color: NEUTRAL_500, marginBottom: 1 },
   kvValor: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: "Helvetica-Bold",
     color: NEUTRAL_900,
   },
@@ -1086,6 +1113,8 @@ function ResumoZootecnico({
 
 function CenarioCard({ c }: { c: CenarioPDF }) {
   const positivo = c.out.lucro >= 0;
+  const breakEven = breakEvenPrecoVenda(c.out);
+  const margem = margemSegurancaVenda(c.out, c.override.precoVendaArroba);
   return (
     <View style={styles.card} wrap={false}>
       <View style={[styles.cardHead, { backgroundColor: c.corHex }]}>
@@ -1101,25 +1130,91 @@ function CenarioCard({ c }: { c: CenarioPDF }) {
         >
           {fmtBRL(c.out.lucro)}
         </Text>
+        <View style={styles.cardSubMetrics}>
+          <View style={styles.cardSubMetric}>
+            <Text style={styles.cardSubLabel}>Lucro por cabeça</Text>
+            <Text
+              style={[
+                styles.cardSubValor,
+                { color: positivo ? EMERALD_700 : RED_700 },
+              ]}
+            >
+              {fmtBRL(c.out.lucroCab)}
+            </Text>
+          </View>
+          <View style={styles.cardSubMetric}>
+            <Text style={styles.cardSubLabel}>Rentabilidade anual</Text>
+            <Text
+              style={[
+                styles.cardSubValor,
+                { color: positivo ? BRAND_900 : RED_700 },
+              ]}
+            >
+              {fmtPct(c.out.rentabilidadeAno)}
+            </Text>
+          </View>
+        </View>
+
+        <Text style={styles.cardSecTitulo}>Premissas deste cenário</Text>
         <View style={styles.kvGrid}>
           <View style={styles.kvRow}>
-            <Text style={styles.kvLabel}>Lucro / cabeça</Text>
-            <Text style={styles.kvValor}>{fmtBRL(c.out.lucroCab)}</Text>
+            <Text style={styles.kvLabel}>Preço de compra</Text>
+            <Text style={styles.kvValor}>
+              {fmtBRL(c.override.precoCompraArroba)}/@
+            </Text>
           </View>
           <View style={styles.kvRow}>
-            <Text style={styles.kvLabel}>Rentabilidade anual</Text>
-            <Text style={styles.kvValor}>{fmtPct(c.out.rentabilidadeAno)}</Text>
+            <Text style={styles.kvLabel}>Preço de venda</Text>
+            <Text style={styles.kvValor}>
+              {fmtBRL(c.override.precoVendaArroba)}/@
+            </Text>
           </View>
+          <View style={styles.kvRow}>
+            <Text style={styles.kvLabel}>GMD médio</Text>
+            <Text style={styles.kvValor}>
+              {fmtGmd(c.out.gmdMedio)} kg/dia
+            </Text>
+          </View>
+          <View style={styles.kvRow}>
+            <Text style={styles.kvLabel}>Peso de saída</Text>
+            <Text style={styles.kvValor}>{fmtInt(c.out.pesoSaidaKg)} kg</Text>
+          </View>
+        </View>
+
+        <Text style={styles.cardSecTitulo}>Indicadores financeiros</Text>
+        <View style={styles.kvGrid}>
           <View style={styles.kvRow}>
             <Text style={styles.kvLabel}>@ produzidas</Text>
             <Text style={styles.kvValor}>
-              {fmtNum(c.out.arrobasProduzidasTotal)}
+              {fmtNum(c.out.arrobasProduzidasTotal)} @
             </Text>
           </View>
           <View style={styles.kvRow}>
             <Text style={styles.kvLabel}>Custo da @ produzida</Text>
             <Text style={styles.kvValor}>
               {fmtBRL(c.out.custoArrobaProduzida)}
+            </Text>
+          </View>
+          <View style={styles.kvRow}>
+            <Text style={styles.kvLabel}>Preço de equilíbrio</Text>
+            <Text style={styles.kvValor}>{fmtBRL(breakEven)}/@</Text>
+          </View>
+          <View style={styles.kvRow}>
+            <Text style={styles.kvLabel}>Margem de segurança</Text>
+            <Text
+              style={[
+                styles.kvValor,
+                {
+                  color:
+                    margem >= 0.15
+                      ? EMERALD_700
+                      : margem >= 0
+                      ? AMBER_700
+                      : RED_700,
+                },
+              ]}
+            >
+              {fmtPct(margem)}
             </Text>
           </View>
           <View style={styles.kvRow}>
