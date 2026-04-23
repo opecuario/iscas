@@ -151,89 +151,103 @@ const styles = StyleSheet.create({
     color: NEUTRAL_700,
     marginTop: 1,
   },
-  // Cards de cenário empilhados (full width no portrait)
-  cardsStack: {
-    flexDirection: "column",
-    gap: 10,
-    marginTop: 4,
-  },
-  card: {
-    borderRadius: 6,
+  // Tabela comparativa de cenários (capa)
+  compWrap: {
     borderWidth: 1,
     borderColor: NEUTRAL_200,
+    borderRadius: 6,
     overflow: "hidden",
+    marginTop: 4,
+    marginBottom: 14,
     backgroundColor: "#ffffff",
   },
-  cardHead: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+  compHeader: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    backgroundColor: NEUTRAL_50,
   },
-  cardHeadLabel: {
-    fontSize: 12,
+  compHeaderLabel: {
+    flex: 2.4,
+    paddingVertical: 9,
+    paddingHorizontal: 10,
+    fontSize: 9,
     fontFamily: "Helvetica-Bold",
-    color: "#ffffff",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  cardBody: { padding: 14 },
-  cardLucroLabel: {
-    fontSize: 11,
     color: NEUTRAL_500,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: 2,
   },
-  cardLucroValor: {
-    fontSize: 28,
+  compHeaderCenario: {
+    flex: 1.6,
+    paddingVertical: 9,
+    paddingHorizontal: 10,
+    fontSize: 10,
     fontFamily: "Helvetica-Bold",
-    marginBottom: 10,
+    color: "#ffffff",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    textAlign: "right",
   },
-  cardSubMetrics: {
+  compRow: {
     flexDirection: "row",
-    marginBottom: 12,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: NEUTRAL_200,
+    borderTopWidth: 0.5,
+    borderTopColor: NEUTRAL_100,
   },
-  cardSubMetric: { width: "50%", paddingRight: 8 },
-  cardSubLabel: {
-    fontSize: 9,
-    color: NEUTRAL_500,
-    marginBottom: 1,
+  compLabel: {
+    flex: 2.4,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    fontSize: 10,
+    color: NEUTRAL_700,
   },
-  cardSubValor: {
-    fontSize: 16,
+  compValor: {
+    flex: 1.6,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    fontSize: 11,
     fontFamily: "Helvetica-Bold",
     color: NEUTRAL_900,
+    textAlign: "right",
   },
-  cardSecTitulo: {
+  compRowDestaque: {
+    backgroundColor: "#f0f7f3",
+    borderTopWidth: 1,
+    borderTopColor: BRAND_100,
+    borderBottomWidth: 1,
+    borderBottomColor: BRAND_100,
+  },
+  compLabelDestaque: {
+    flex: 2.4,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    color: BRAND_900,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  compValorDestaque: {
+    flex: 1.6,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    fontSize: 15,
+    fontFamily: "Helvetica-Bold",
+    textAlign: "right",
+  },
+  compSepRow: {
+    flexDirection: "row",
+    backgroundColor: BRAND_50,
+    borderTopWidth: 1,
+    borderTopColor: BRAND_100,
+    borderBottomWidth: 1,
+    borderBottomColor: BRAND_100,
+  },
+  compSepText: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
     fontSize: 9,
     fontFamily: "Helvetica-Bold",
     color: BRAND_800,
     textTransform: "uppercase",
-    letterSpacing: 0.6,
-    marginTop: 10,
-    marginBottom: 6,
-  },
-  kvGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  kvRow: {
-    width: "50%",
-    paddingVertical: 5,
-    paddingRight: 8,
-    borderTopWidth: 0.5,
-    borderTopColor: NEUTRAL_200,
-  },
-  kvLabel: { fontSize: 10, color: NEUTRAL_500, marginBottom: 1 },
-  kvValor: {
-    fontSize: 13,
-    fontFamily: "Helvetica-Bold",
-    color: NEUTRAL_900,
+    letterSpacing: 0.5,
   },
   capaCtaWrap: {
     marginTop: 16,
@@ -694,11 +708,7 @@ export default function RelatorioPDF({
 
         <ResumoZootecnico inputs={inputs} out={out0} />
 
-        <View style={styles.cardsStack}>
-          {cenarios.map((c) => (
-            <CenarioCard key={c.id} c={c} />
-          ))}
-        </View>
+        <ComparativoCenarios cenarios={cenarios} />
 
         <View style={styles.capaCtaWrap} wrap={false}>
           <Text style={styles.capaCtaTitle}>
@@ -1111,118 +1121,147 @@ function ResumoZootecnico({
   );
 }
 
-function CenarioCard({ c }: { c: CenarioPDF }) {
-  const positivo = c.out.lucro >= 0;
-  const breakEven = breakEvenPrecoVenda(c.out);
-  const margem = margemSegurancaVenda(c.out, c.override.precoVendaArroba);
+function ComparativoCenarios({ cenarios }: { cenarios: CenarioPDF[] }) {
   return (
-    <View style={styles.card} wrap={false}>
-      <View style={[styles.cardHead, { backgroundColor: c.corHex }]}>
-        <Text style={styles.cardHeadLabel}>{c.label}</Text>
+    <View style={styles.compWrap} wrap={false}>
+      {/* Cabeçalho */}
+      <View style={styles.compHeader}>
+        <Text style={styles.compHeaderLabel}>Indicador</Text>
+        {cenarios.map((c) => (
+          <Text
+            key={c.id}
+            style={[styles.compHeaderCenario, { backgroundColor: c.corHex }]}
+          >
+            {c.label}
+          </Text>
+        ))}
       </View>
-      <View style={styles.cardBody}>
-        <Text style={styles.cardLucroLabel}>Lucro total</Text>
+
+      {/* Destaque: Lucro total */}
+      <View style={[styles.compRow, styles.compRowDestaque]}>
+        <Text style={styles.compLabelDestaque}>Lucro total</Text>
+        {cenarios.map((c) => (
+          <Text
+            key={c.id}
+            style={[
+              styles.compValorDestaque,
+              { color: c.out.lucro >= 0 ? EMERALD_700 : RED_700 },
+            ]}
+          >
+            {fmtBRL(c.out.lucro)}
+          </Text>
+        ))}
+      </View>
+
+      <CompRow
+        label="Lucro por cabeça"
+        valores={cenarios.map((c) => ({
+          texto: fmtBRL(c.out.lucroCab),
+          cor: c.out.lucro >= 0 ? EMERALD_700 : RED_700,
+        }))}
+      />
+      <CompRow
+        label="Rentabilidade anual"
+        valores={cenarios.map((c) => ({
+          texto: fmtPct(c.out.rentabilidadeAno),
+        }))}
+      />
+
+      <CompSeparator label="Premissas" />
+      <CompRow
+        label="Preço de compra"
+        valores={cenarios.map((c) => ({
+          texto: `${fmtBRL(c.override.precoCompraArroba)}/@`,
+        }))}
+      />
+      <CompRow
+        label="Preço de venda"
+        valores={cenarios.map((c) => ({
+          texto: `${fmtBRL(c.override.precoVendaArroba)}/@`,
+        }))}
+      />
+      <CompRow
+        label="GMD médio"
+        valores={cenarios.map((c) => ({
+          texto: `${fmtGmd(c.out.gmdMedio)} kg/dia`,
+        }))}
+      />
+      <CompRow
+        label="Peso de saída"
+        valores={cenarios.map((c) => ({
+          texto: `${fmtInt(c.out.pesoSaidaKg)} kg`,
+        }))}
+      />
+
+      <CompSeparator label="Indicadores financeiros" />
+      <CompRow
+        label="@ produzidas"
+        valores={cenarios.map((c) => ({
+          texto: `${fmtNum(c.out.arrobasProduzidasTotal)} @`,
+        }))}
+      />
+      <CompRow
+        label="Custo da @ produzida"
+        valores={cenarios.map((c) => ({
+          texto: fmtBRL(c.out.custoArrobaProduzida),
+        }))}
+      />
+      <CompRow
+        label="Preço de equilíbrio"
+        valores={cenarios.map((c) => ({
+          texto: `${fmtBRL(breakEvenPrecoVenda(c.out))}/@`,
+        }))}
+      />
+      <CompRow
+        label="Margem de segurança"
+        valores={cenarios.map((c) => {
+          const m = margemSegurancaVenda(
+            c.out,
+            c.override.precoVendaArroba
+          );
+          return {
+            texto: fmtPct(m),
+            cor:
+              m >= 0.15 ? EMERALD_700 : m >= 0 ? AMBER_700 : RED_700,
+          };
+        })}
+      />
+      <CompRow
+        label="Total desembolsado"
+        valores={cenarios.map((c) => ({
+          texto: fmtBRL(c.out.totalDesembolsado),
+        }))}
+      />
+    </View>
+  );
+}
+
+function CompRow({
+  label,
+  valores,
+}: {
+  label: string;
+  valores: { texto: string; cor?: string }[];
+}) {
+  return (
+    <View style={styles.compRow} wrap={false}>
+      <Text style={styles.compLabel}>{label}</Text>
+      {valores.map((v, i) => (
         <Text
-          style={[
-            styles.cardLucroValor,
-            { color: positivo ? EMERALD_700 : RED_700 },
-          ]}
+          key={i}
+          style={[styles.compValor, v.cor ? { color: v.cor } : {}]}
         >
-          {fmtBRL(c.out.lucro)}
+          {v.texto}
         </Text>
-        <View style={styles.cardSubMetrics}>
-          <View style={styles.cardSubMetric}>
-            <Text style={styles.cardSubLabel}>Lucro por cabeça</Text>
-            <Text
-              style={[
-                styles.cardSubValor,
-                { color: positivo ? EMERALD_700 : RED_700 },
-              ]}
-            >
-              {fmtBRL(c.out.lucroCab)}
-            </Text>
-          </View>
-          <View style={styles.cardSubMetric}>
-            <Text style={styles.cardSubLabel}>Rentabilidade anual</Text>
-            <Text
-              style={[
-                styles.cardSubValor,
-                { color: positivo ? BRAND_900 : RED_700 },
-              ]}
-            >
-              {fmtPct(c.out.rentabilidadeAno)}
-            </Text>
-          </View>
-        </View>
+      ))}
+    </View>
+  );
+}
 
-        <Text style={styles.cardSecTitulo}>Premissas deste cenário</Text>
-        <View style={styles.kvGrid}>
-          <View style={styles.kvRow}>
-            <Text style={styles.kvLabel}>Preço de compra</Text>
-            <Text style={styles.kvValor}>
-              {fmtBRL(c.override.precoCompraArroba)}/@
-            </Text>
-          </View>
-          <View style={styles.kvRow}>
-            <Text style={styles.kvLabel}>Preço de venda</Text>
-            <Text style={styles.kvValor}>
-              {fmtBRL(c.override.precoVendaArroba)}/@
-            </Text>
-          </View>
-          <View style={styles.kvRow}>
-            <Text style={styles.kvLabel}>GMD médio</Text>
-            <Text style={styles.kvValor}>
-              {fmtGmd(c.out.gmdMedio)} kg/dia
-            </Text>
-          </View>
-          <View style={styles.kvRow}>
-            <Text style={styles.kvLabel}>Peso de saída</Text>
-            <Text style={styles.kvValor}>{fmtInt(c.out.pesoSaidaKg)} kg</Text>
-          </View>
-        </View>
-
-        <Text style={styles.cardSecTitulo}>Indicadores financeiros</Text>
-        <View style={styles.kvGrid}>
-          <View style={styles.kvRow}>
-            <Text style={styles.kvLabel}>@ produzidas</Text>
-            <Text style={styles.kvValor}>
-              {fmtNum(c.out.arrobasProduzidasTotal)} @
-            </Text>
-          </View>
-          <View style={styles.kvRow}>
-            <Text style={styles.kvLabel}>Custo da @ produzida</Text>
-            <Text style={styles.kvValor}>
-              {fmtBRL(c.out.custoArrobaProduzida)}
-            </Text>
-          </View>
-          <View style={styles.kvRow}>
-            <Text style={styles.kvLabel}>Preço de equilíbrio</Text>
-            <Text style={styles.kvValor}>{fmtBRL(breakEven)}/@</Text>
-          </View>
-          <View style={styles.kvRow}>
-            <Text style={styles.kvLabel}>Margem de segurança</Text>
-            <Text
-              style={[
-                styles.kvValor,
-                {
-                  color:
-                    margem >= 0.15
-                      ? EMERALD_700
-                      : margem >= 0
-                      ? AMBER_700
-                      : RED_700,
-                },
-              ]}
-            >
-              {fmtPct(margem)}
-            </Text>
-          </View>
-          <View style={styles.kvRow}>
-            <Text style={styles.kvLabel}>Total desembolsado</Text>
-            <Text style={styles.kvValor}>{fmtBRL(c.out.totalDesembolsado)}</Text>
-          </View>
-        </View>
-      </View>
+function CompSeparator({ label }: { label: string }) {
+  return (
+    <View style={styles.compSepRow} wrap={false}>
+      <Text style={styles.compSepText}>{label}</Text>
     </View>
   );
 }
