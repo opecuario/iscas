@@ -92,6 +92,28 @@ export default function AdminUsuarioDetalhe() {
         <CampoInfo titulo="E-mail" valor={usuario.email} />
         <CampoInfo titulo="Telefone" valor={usuario.telefone} />
         <CampoInfo titulo="Estado" valor={usuario.estado} />
+        <CampoInfo
+          titulo="Tipo"
+          valor={
+            usuario.tipoUsuario === "pecuarista"
+              ? "Pecuarista"
+              : usuario.tipoUsuario === "profissional"
+              ? "Profissional"
+              : usuario.tipoUsuario === "outro"
+              ? "Outro"
+              : "—"
+          }
+        />
+        {usuario.tipoUsuario === "pecuarista" && (
+          <CampoInfo
+            titulo="Hectares de pasto"
+            valor={
+              usuario.hectaresPasto != null
+                ? `${usuario.hectaresPasto} ha`
+                : "—"
+            }
+          />
+        )}
       </section>
 
       <section className="mt-4 flex flex-col gap-3 rounded-lg border border-brand-200 bg-brand-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">

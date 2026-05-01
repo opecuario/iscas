@@ -11,12 +11,16 @@ import type {
   VarianteOverride,
 } from "./types";
 
+export type TipoUsuario = "pecuarista" | "profissional" | "outro";
+
 export interface Usuario {
   id: string;
   nome: string;
   email: string;
   telefone: string;
   estado: string;
+  tipoUsuario: TipoUsuario | null;
+  hectaresPasto: number | null;
   simulacoesIlimitadas: boolean;
   createdAt: string;
 }
@@ -62,6 +66,8 @@ type UsuarioRow = {
   nome: string;
   telefone: string | null;
   estado: string | null;
+  tipo_usuario: string | null;
+  hectares_pasto: number | null;
   simulacoes_ilimitadas: boolean | null;
   created_at: string;
 };
@@ -165,12 +171,21 @@ function migrarVariante(
 }
 
 function mapUsuario(row: UsuarioRow): Usuario {
+  const tipo =
+    row.tipo_usuario === "pecuarista" ||
+    row.tipo_usuario === "profissional" ||
+    row.tipo_usuario === "outro"
+      ? row.tipo_usuario
+      : null;
   return {
     id: row.id,
     email: row.email,
     nome: row.nome,
     telefone: row.telefone ?? "",
     estado: row.estado ?? "",
+    tipoUsuario: tipo,
+    hectaresPasto:
+      typeof row.hectares_pasto === "number" ? row.hectares_pasto : null,
     simulacoesIlimitadas: row.simulacoes_ilimitadas ?? false,
     createdAt: row.created_at,
   };
@@ -236,6 +251,8 @@ export async function cadastrar(params: {
   senha: string;
   telefone: string;
   estado: string;
+  tipoUsuario: TipoUsuario;
+  hectaresPasto: number | null;
 }): Promise<AuthResultado> {
   const email = params.email.trim().toLowerCase();
   const { data, error } = await supabase.auth.signUp({
@@ -258,6 +275,9 @@ export async function cadastrar(params: {
     nome: params.nome.trim(),
     telefone: params.telefone.trim() || null,
     estado: params.estado || null,
+    tipo_usuario: params.tipoUsuario,
+    hectares_pasto:
+      params.tipoUsuario === "pecuarista" ? params.hectaresPasto : null,
   });
   if (insertErr) return { ok: false, erro: insertErr.message };
 

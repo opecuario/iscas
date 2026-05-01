@@ -4,11 +4,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { cadastrar } from "@/lib/storage";
+import { cadastrar, type TipoUsuario } from "@/lib/storage";
 
 const ESTADOS = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
 ];
+
+const TIPO_USUARIO_LABEL: Record<TipoUsuario, string> = {
+  pecuarista: "Pecuarista",
+  profissional: "Profissional (consultor, zootecnista, veterinário…)",
+  outro: "Outro",
+};
 
 function mascararTelefone(v: string): string {
   const d = v.replace(/\D/g, "").slice(0, 11);
@@ -26,6 +32,8 @@ export default function CadastroPage() {
     senha: "",
     telefone: "",
     estado: "",
+    tipoUsuario: "" as TipoUsuario | "",
+    hectaresPasto: "",
   });
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -39,15 +47,34 @@ export default function CadastroPage() {
     const senha = form.senha;
     const telefone = form.telefone.trim();
     const estado = form.estado;
+    const tipoUsuario = form.tipoUsuario;
+    const hectaresStr = form.hectaresPasto.replace(",", ".").trim();
+    const hectaresParsed = hectaresStr ? Number(hectaresStr) : NaN;
 
     if (!nome) return setErro("Informe seu nome.");
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return setErro("E-mail inválido.");
     if (senha.length < 6) return setErro("A senha precisa ter ao menos 6 caracteres.");
     if (telefone.replace(/\D/g, "").length < 10) return setErro("Telefone inválido.");
     if (!estado) return setErro("Selecione o estado.");
+    if (!tipoUsuario) return setErro("Selecione o tipo de usuário.");
+    if (
+      tipoUsuario === "pecuarista" &&
+      (!hectaresStr || !isFinite(hectaresParsed) || hectaresParsed <= 0)
+    ) {
+      return setErro("Informe quantos hectares de pasto a sua área tem.");
+    }
 
     setLoading(true);
-    const resultado = await cadastrar({ nome, email, senha, telefone, estado });
+    const resultado = await cadastrar({
+      nome,
+      email,
+      senha,
+      telefone,
+      estado,
+      tipoUsuario,
+      hectaresPasto:
+        tipoUsuario === "pecuarista" ? hectaresParsed : null,
+    });
     if (!resultado.ok) {
       setLoading(false);
       setErro(resultado.erro);
@@ -93,6 +120,50 @@ export default function CadastroPage() {
               </select>
             </label>
 
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-brand-900/80">
+                Você é
+              </span>
+              <select
+                value={form.tipoUsuario}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    tipoUsuario: e.target.value as TipoUsuario | "",
+                    hectaresPasto:
+                      e.target.value === "pecuarista"
+                        ? form.hectaresPasto
+                        : "",
+                  })
+                }
+                className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600"
+              >
+                <option value="">Selecione…</option>
+                {(Object.keys(TIPO_USUARIO_LABEL) as TipoUsuario[]).map(
+                  (t) => (
+                    <option key={t} value={t}>
+                      {TIPO_USUARIO_LABEL[t]}
+                    </option>
+                  )
+                )}
+              </select>
+            </label>
+
+            {form.tipoUsuario === "pecuarista" && (
+              <Campo
+                label="Hectares de pasto"
+                value={form.hectaresPasto}
+                onChange={(v) =>
+                  setForm({
+                    ...form,
+                    hectaresPasto: v.replace(/[^0-9.,]/g, ""),
+                  })
+                }
+                placeholder="Ex.: 250"
+                inputMode="decimal"
+              />
+            )}
+
             {erro && <div className="rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-800">{erro}</div>}
 
             <button
@@ -136,12 +207,14 @@ function Campo({
   onChange,
   placeholder,
   type = "text",
+  inputMode,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   type?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
 }) {
   return (
     <label className="block">
@@ -151,6 +224,7 @@ function Campo({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        inputMode={inputMode}
         className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600"
       />
     </label>
