@@ -92,6 +92,7 @@ export default function AdminUsuarioDetalhe() {
         <CampoInfo titulo="E-mail" valor={usuario.email} />
         <CampoInfo titulo="Telefone" valor={usuario.telefone} />
         <CampoInfo titulo="Estado" valor={usuario.estado} />
+        <CampoInfo titulo="Município" valor={usuario.municipio || "—"} />
         <CampoInfo
           titulo="Tipo"
           valor={

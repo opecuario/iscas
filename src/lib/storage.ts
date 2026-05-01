@@ -19,6 +19,7 @@ export interface Usuario {
   email: string;
   telefone: string;
   estado: string;
+  municipio: string;
   tipoUsuario: TipoUsuario | null;
   hectaresPasto: number | null;
   simulacoesIlimitadas: boolean;
@@ -66,6 +67,7 @@ type UsuarioRow = {
   nome: string;
   telefone: string | null;
   estado: string | null;
+  municipio: string | null;
   tipo_usuario: string | null;
   hectares_pasto: number | null;
   simulacoes_ilimitadas: boolean | null;
@@ -183,6 +185,7 @@ function mapUsuario(row: UsuarioRow): Usuario {
     nome: row.nome,
     telefone: row.telefone ?? "",
     estado: row.estado ?? "",
+    municipio: row.municipio ?? "",
     tipoUsuario: tipo,
     hectaresPasto:
       typeof row.hectares_pasto === "number" ? row.hectares_pasto : null,
@@ -251,6 +254,7 @@ export async function cadastrar(params: {
   senha: string;
   telefone: string;
   estado: string;
+  municipio: string;
   tipoUsuario: TipoUsuario;
   hectaresPasto: number | null;
 }): Promise<AuthResultado> {
@@ -275,6 +279,7 @@ export async function cadastrar(params: {
     nome: params.nome.trim(),
     telefone: params.telefone.trim() || null,
     estado: params.estado || null,
+    municipio: params.municipio.trim() || null,
     tipo_usuario: params.tipoUsuario,
     hectares_pasto:
       params.tipoUsuario === "pecuarista" ? params.hectaresPasto : null,

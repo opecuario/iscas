@@ -32,6 +32,7 @@ export default function CadastroPage() {
     senha: "",
     telefone: "",
     estado: "",
+    municipio: "",
     tipoUsuario: "" as TipoUsuario | "",
     hectaresPasto: "",
   });
@@ -47,6 +48,7 @@ export default function CadastroPage() {
     const senha = form.senha;
     const telefone = form.telefone.trim();
     const estado = form.estado;
+    const municipio = form.municipio.trim();
     const tipoUsuario = form.tipoUsuario;
     const hectaresStr = form.hectaresPasto.replace(",", ".").trim();
     const hectaresParsed = hectaresStr ? Number(hectaresStr) : NaN;
@@ -56,6 +58,7 @@ export default function CadastroPage() {
     if (senha.length < 6) return setErro("A senha precisa ter ao menos 6 caracteres.");
     if (telefone.replace(/\D/g, "").length < 10) return setErro("Telefone inválido.");
     if (!estado) return setErro("Selecione o estado.");
+    if (!municipio) return setErro("Informe o município.");
     if (!tipoUsuario) return setErro("Selecione o tipo de usuário.");
     if (
       tipoUsuario === "pecuarista" &&
@@ -71,6 +74,7 @@ export default function CadastroPage() {
       senha,
       telefone,
       estado,
+      municipio,
       tipoUsuario,
       hectaresPasto:
         tipoUsuario === "pecuarista" ? hectaresParsed : null,
@@ -106,19 +110,27 @@ export default function CadastroPage() {
               onChange={(v) => setForm({ ...form, telefone: mascararTelefone(v) })}
               placeholder="(11) 99999-9999"
             />
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-brand-900/80">Estado</span>
-              <select
-                value={form.estado}
-                onChange={(e) => setForm({ ...form, estado: e.target.value })}
-                className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600"
-              >
-                <option value="">Selecione…</option>
-                {ESTADOS.map((uf) => (
-                  <option key={uf} value={uf}>{uf}</option>
-                ))}
-              </select>
-            </label>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[120px_1fr]">
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-brand-900/80">Estado</span>
+                <select
+                  value={form.estado}
+                  onChange={(e) => setForm({ ...form, estado: e.target.value })}
+                  className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600"
+                >
+                  <option value="">Selecione…</option>
+                  {ESTADOS.map((uf) => (
+                    <option key={uf} value={uf}>{uf}</option>
+                  ))}
+                </select>
+              </label>
+              <Campo
+                label="Município"
+                value={form.municipio}
+                onChange={(v) => setForm({ ...form, municipio: v })}
+                placeholder="Ex.: Cuiabá"
+              />
+            </div>
 
             <label className="block">
               <span className="mb-1 block text-xs font-medium text-brand-900/80">

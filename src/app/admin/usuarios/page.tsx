@@ -59,7 +59,8 @@ export default function AdminUsuarios() {
           !q ||
           u.nome.toLowerCase().includes(q) ||
           u.email.toLowerCase().includes(q) ||
-          u.telefone.includes(q)
+          u.telefone.includes(q) ||
+          u.municipio.toLowerCase().includes(q)
       );
   }, [usuarios, busca, filtroTipo]);
 
@@ -86,7 +87,7 @@ export default function AdminUsuarios() {
         </div>
         <input
           type="search"
-          placeholder="Buscar por nome, e-mail ou telefone…"
+          placeholder="Buscar por nome, e-mail, telefone ou município…"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 sm:w-80"
@@ -128,6 +129,7 @@ export default function AdminUsuarios() {
                 <th className="px-4 py-3 font-semibold">E-mail</th>
                 <th className="px-4 py-3 font-semibold">Telefone</th>
                 <th className="px-4 py-3 font-semibold">UF</th>
+                <th className="px-4 py-3 font-semibold">Município</th>
                 <th className="px-4 py-3 font-semibold">Cadastro</th>
                 <th className="px-4 py-3 text-right font-semibold">Simulações</th>
               </tr>
@@ -136,7 +138,7 @@ export default function AdminUsuarios() {
               {filtrados.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className="px-4 py-10 text-center text-sm text-neutral-500"
                   >
                     Nenhum usuário encontrado.
@@ -182,6 +184,11 @@ export default function AdminUsuarios() {
                         {u.telefone}
                       </td>
                       <td className="px-4 py-3 text-neutral-700">{u.estado}</td>
+                      <td className="px-4 py-3 text-neutral-700">
+                        {u.municipio || (
+                          <span className="text-neutral-400">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-neutral-500">
                         {new Date(u.createdAt).toLocaleDateString("pt-BR")}
                       </td>
