@@ -116,6 +116,29 @@ export default function CadastroPage() {
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(REF_STORAGE_KEY);
     }
+    // Se nao veio de nenhum link rastreado, manda pro Google Sheet de
+    // prospeccao. Fire-and-forget — nao bloqueia o redirect.
+    if (!origemLink) {
+      void fetch("/api/leads/google-sheets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome,
+          email,
+          telefone,
+          estado,
+          municipio,
+          hectares:
+            tipoUsuario === "pecuarista" && isFinite(hectaresParsed)
+              ? hectaresParsed
+              : "",
+          simulacoes: 0,
+        }),
+        keepalive: true,
+      }).catch(() => {
+        /* silencioso — nao queremos falhar o cadastro por causa disso */
+      });
+    }
     router.replace("/");
   }
 
