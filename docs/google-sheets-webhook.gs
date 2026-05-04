@@ -48,26 +48,9 @@ function doPost(e) {
       return jsonOut({ ok: false, erro: "unauthorized" });
     }
 
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet =
-      ss.getSheetByName(SHEET_NAME) || ss.getActiveSheet();
-
-    // Acha a proxima linha vazia olhando especificamente a coluna A (Nome).
-    // Evita que checkboxes / formatacao em outras colunas confundam
-    // o getLastRow / appendRow nativos.
-    const lastRow = sheet.getLastRow();
-    const colA = lastRow > 0
-      ? sheet.getRange(1, 1, lastRow, 1).getValues()
-      : [];
-    let proximaLinha = 2; // assume linha 1 = cabecalho
-    for (let i = colA.length - 1; i >= 0; i--) {
-      if (String(colA[i][0]).trim() !== "") {
-        proximaLinha = i + 2;
-        break;
-      }
-    }
-
-    sheet.getRange(proximaLinha, 1, 1, 8).setValues([[
+    const sheet = pegarSheet();
+    const linha = calcularProximaLinha(sheet);
+    sheet.getRange(linha, 1, 1, 8).setValues([[
       body.nome || "",                 // A
       body.telefone || "",             // B
       body.municipio || "",            // C
@@ -79,11 +62,66 @@ function doPost(e) {
       "",                              // G — Dono do lead (manual)
       false,                           // H — Cadastrado no CRM? (manual)
     ]]);
-
-    return jsonOut({ ok: true });
+    return jsonOut({ ok: true, linha: linha, versao: "v3" });
   } catch (err) {
     return jsonOut({ ok: false, erro: String(err) });
   }
+}
+
+// Endpoint de diagnostico: abra a URL do Web App no navegador
+// e voce ve qual versao do script esta rodando + qual seria a
+// proxima linha gravada AGORA.
+function doGet() {
+  const sheet = pegarSheet();
+  return jsonOut({
+    ok: true,
+    versao: "v3",
+    sheet_name: sheet.getName(),
+    last_row_nativo: sheet.getLastRow(),
+    proxima_linha_calculada: calcularProximaLinha(sheet),
+  });
+}
+
+// Funcao pra rodar manualmente do editor (Executar > teste).
+// Grava um lead de teste pra confirmar onde o script escreve.
+function teste() {
+  const sheet = pegarSheet();
+  const linha = calcularProximaLinha(sheet);
+  console.log("Vou gravar na linha", linha, "do sheet", sheet.getName());
+  sheet.getRange(linha, 1, 1, 8).setValues([[
+    "TESTE MANUAL " + new Date().toLocaleTimeString(),
+    "(00) 00000-0000",
+    "Cidade Teste",
+    "TT",
+    99,
+    0,
+    "",
+    false,
+  ]]);
+  return linha;
+}
+
+function pegarSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  return ss.getSheetByName(SHEET_NAME) || ss.getActiveSheet();
+}
+
+function calcularProximaLinha(sheet) {
+  // Acha a PRIMEIRA linha vazia na coluna A a partir do topo.
+  // Ignora qualquer "lixo" residual (checkboxes, espacos invisiveis,
+  // resultados de formula, etc) que possam estar mais pra baixo.
+  const limite = 5000;
+  const ultimaParaLer = Math.min(limite, Math.max(sheet.getMaxRows(), 1));
+  const valores = sheet
+    .getRange(1, 1, ultimaParaLer, 1)
+    .getValues();
+  // Pula linha 1 (cabecalho).
+  for (let i = 1; i < valores.length; i++) {
+    if (String(valores[i][0]).trim() === "") {
+      return i + 1; // i e zero-based, linhas sao 1-based
+    }
+  }
+  return ultimaParaLer + 1;
 }
 
 function jsonOut(obj) {
