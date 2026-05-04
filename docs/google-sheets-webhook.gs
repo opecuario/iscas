@@ -52,7 +52,22 @@ function doPost(e) {
     const sheet =
       ss.getSheetByName(SHEET_NAME) || ss.getActiveSheet();
 
-    sheet.appendRow([
+    // Acha a proxima linha vazia olhando especificamente a coluna A (Nome).
+    // Evita que checkboxes / formatacao em outras colunas confundam
+    // o getLastRow / appendRow nativos.
+    const lastRow = sheet.getLastRow();
+    const colA = lastRow > 0
+      ? sheet.getRange(1, 1, lastRow, 1).getValues()
+      : [];
+    let proximaLinha = 2; // assume linha 1 = cabecalho
+    for (let i = colA.length - 1; i >= 0; i--) {
+      if (String(colA[i][0]).trim() !== "") {
+        proximaLinha = i + 2;
+        break;
+      }
+    }
+
+    sheet.getRange(proximaLinha, 1, 1, 8).setValues([[
       body.nome || "",                 // A
       body.telefone || "",             // B
       body.municipio || "",            // C
@@ -63,7 +78,7 @@ function doPost(e) {
       typeof body.simulacoes === "number" ? body.simulacoes : 0, // F
       "",                              // G — Dono do lead (manual)
       false,                           // H — Cadastrado no CRM? (manual)
-    ]);
+    ]]);
 
     return jsonOut({ ok: true });
   } catch (err) {
