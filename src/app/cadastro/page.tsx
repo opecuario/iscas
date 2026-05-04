@@ -3,8 +3,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cadastrar, type TipoUsuario } from "@/lib/storage";
+
+const REF_STORAGE_KEY = "opec.ref";
+
+function lerRefDaUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const ref = (params.get("ref") || "").trim().toLowerCase();
+  if (!ref) return null;
+  // sanitiza pra evitar lixo
+  const clean = ref.replace(/[^a-z0-9-]/g, "").slice(0, 64);
+  return clean || null;
+}
 
 const ESTADOS = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
@@ -38,6 +50,22 @@ export default function CadastroPage() {
   });
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [origemLink, setOrigemLink] = useState<string | null>(null);
+
+  // Captura ?ref=xxx na primeira visita e persiste em localStorage pra
+  // atribuição first-touch — mesmo que o usuario navegue por outras paginas
+  // antes de cadastrar, a origem permanece.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const refUrl = lerRefDaUrl();
+    if (refUrl) {
+      window.localStorage.setItem(REF_STORAGE_KEY, refUrl);
+      setOrigemLink(refUrl);
+      return;
+    }
+    const stored = window.localStorage.getItem(REF_STORAGE_KEY);
+    if (stored) setOrigemLink(stored);
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -78,11 +106,15 @@ export default function CadastroPage() {
       tipoUsuario,
       hectaresPasto:
         tipoUsuario === "pecuarista" ? hectaresParsed : null,
+      origemLink,
     });
     if (!resultado.ok) {
       setLoading(false);
       setErro(resultado.erro);
       return;
+    }
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(REF_STORAGE_KEY);
     }
     router.replace("/");
   }

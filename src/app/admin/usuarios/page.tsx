@@ -76,6 +76,70 @@ export default function AdminUsuarios() {
     return m;
   }, [usuarios, sims]);
 
+  function exportarCsv() {
+    const cabecalho = [
+      "Nome",
+      "Email",
+      "Telefone",
+      "UF",
+      "Municipio",
+      "Tipo",
+      "Hectares de pasto",
+      "Origem",
+      "Cadastro",
+      "Simulacoes",
+      "Plano ilimitado",
+    ];
+    const linhas = filtrados.map((u) => {
+      const tipoLabel =
+        u.tipoUsuario === "pecuarista"
+          ? "Pecuarista"
+          : u.tipoUsuario === "profissional"
+          ? "Profissional"
+          : u.tipoUsuario === "outro"
+          ? "Outro"
+          : "";
+      return [
+        u.nome,
+        u.email,
+        u.telefone,
+        u.estado,
+        u.municipio,
+        tipoLabel,
+        u.tipoUsuario === "pecuarista" && u.hectaresPasto != null
+          ? String(u.hectaresPasto)
+          : "",
+        u.origemLink ?? "",
+        new Date(u.createdAt).toLocaleDateString("pt-BR"),
+        String(simsPorEmail.get(u.email) ?? 0),
+        u.simulacoesIlimitadas ? "Sim" : "Nao",
+      ];
+    });
+    const escape = (v: string) => {
+      const s = (v ?? "").replace(/"/g, '""');
+      return /[",;\n]/.test(s) ? `"${s}"` : s;
+    };
+    const sep = ";"; // BR Excel usa ; como separador
+    const csv = [cabecalho, ...linhas]
+      .map((cols) => cols.map(escape).join(sep))
+      .join("\r\n");
+    const bom = "﻿";
+    const blob = new Blob([bom + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const data = new Date().toISOString().slice(0, 10);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `usuarios_${data}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 1000);
+  }
+
   return (
     <div>
       <header className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -85,13 +149,24 @@ export default function AdminUsuarios() {
             {filtrados.length} de {usuarios.length} usuários cadastrados.
           </p>
         </div>
-        <input
-          type="search"
-          placeholder="Buscar por nome, e-mail, telefone ou município…"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 sm:w-80"
-        />
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <input
+            type="search"
+            placeholder="Buscar por nome, e-mail, telefone ou município…"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 sm:w-80"
+          />
+          <button
+            type="button"
+            onClick={exportarCsv}
+            disabled={filtrados.length === 0}
+            className="rounded-md bg-brand-800 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-50"
+            title="Baixar CSV (abre no Excel)"
+          >
+            ↓ Exportar Excel
+          </button>
+        </div>
       </header>
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -130,6 +205,7 @@ export default function AdminUsuarios() {
                 <th className="px-4 py-3 font-semibold">Telefone</th>
                 <th className="px-4 py-3 font-semibold">UF</th>
                 <th className="px-4 py-3 font-semibold">Município</th>
+                <th className="px-4 py-3 font-semibold">Origem</th>
                 <th className="px-4 py-3 font-semibold">Cadastro</th>
                 <th className="px-4 py-3 text-right font-semibold">Simulações</th>
               </tr>
@@ -138,7 +214,7 @@ export default function AdminUsuarios() {
               {filtrados.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={10}
                     className="px-4 py-10 text-center text-sm text-neutral-500"
                   >
                     Nenhum usuário encontrado.
@@ -186,6 +262,15 @@ export default function AdminUsuarios() {
                       <td className="px-4 py-3 text-neutral-700">{u.estado}</td>
                       <td className="px-4 py-3 text-neutral-700">
                         {u.municipio || (
+                          <span className="text-neutral-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-neutral-700">
+                        {u.origemLink ? (
+                          <span className="rounded bg-brand-100 px-1.5 py-0.5 text-[11px] font-medium text-brand-800">
+                            {u.origemLink}
+                          </span>
+                        ) : (
                           <span className="text-neutral-400">—</span>
                         )}
                       </td>

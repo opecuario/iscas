@@ -22,6 +22,7 @@ export interface Usuario {
   municipio: string;
   tipoUsuario: TipoUsuario | null;
   hectaresPasto: number | null;
+  origemLink: string | null;
   simulacoesIlimitadas: boolean;
   createdAt: string;
 }
@@ -70,6 +71,7 @@ type UsuarioRow = {
   municipio: string | null;
   tipo_usuario: string | null;
   hectares_pasto: number | null;
+  origem_link: string | null;
   simulacoes_ilimitadas: boolean | null;
   created_at: string;
 };
@@ -189,6 +191,7 @@ function mapUsuario(row: UsuarioRow): Usuario {
     tipoUsuario: tipo,
     hectaresPasto:
       typeof row.hectares_pasto === "number" ? row.hectares_pasto : null,
+    origemLink: row.origem_link ?? null,
     simulacoesIlimitadas: row.simulacoes_ilimitadas ?? false,
     createdAt: row.created_at,
   };
@@ -257,6 +260,7 @@ export async function cadastrar(params: {
   municipio: string;
   tipoUsuario: TipoUsuario;
   hectaresPasto: number | null;
+  origemLink?: string | null;
 }): Promise<AuthResultado> {
   const email = params.email.trim().toLowerCase();
   const { data, error } = await supabase.auth.signUp({
@@ -283,6 +287,7 @@ export async function cadastrar(params: {
     tipo_usuario: params.tipoUsuario,
     hectares_pasto:
       params.tipoUsuario === "pecuarista" ? params.hectaresPasto : null,
+    origem_link: params.origemLink ?? null,
   });
   if (insertErr) return { ok: false, erro: insertErr.message };
 
