@@ -116,9 +116,10 @@ export default function CadastroPage() {
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(REF_STORAGE_KEY);
     }
-    // Se nao veio de nenhum link rastreado, manda pro Google Sheet de
-    // prospeccao. Fire-and-forget — nao bloqueia o redirect.
-    if (!origemLink) {
+    // Se nao veio de nenhum link rastreado E o usuario e pecuarista,
+    // manda pro Google Sheet de prospeccao.
+    // Fire-and-forget — nao bloqueia o redirect.
+    if (!origemLink && tipoUsuario === "pecuarista") {
       void fetch("/api/leads/google-sheets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

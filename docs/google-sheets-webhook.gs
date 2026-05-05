@@ -62,7 +62,7 @@ function doPost(e) {
       "",                              // G — Dono do lead (manual)
       false,                           // H — Cadastrado no CRM? (manual)
     ]]);
-    return jsonOut({ ok: true, linha: linha, versao: "v3" });
+    return jsonOut({ ok: true, linha: linha, versao: "v4" });
   } catch (err) {
     return jsonOut({ ok: false, erro: String(err) });
   }
@@ -75,7 +75,7 @@ function doGet() {
   const sheet = pegarSheet();
   return jsonOut({
     ok: true,
-    versao: "v3",
+    versao: "v4",
     sheet_name: sheet.getName(),
     last_row_nativo: sheet.getLastRow(),
     proxima_linha_calculada: calcularProximaLinha(sheet),
@@ -107,21 +107,22 @@ function pegarSheet() {
 }
 
 function calcularProximaLinha(sheet) {
-  // Acha a PRIMEIRA linha vazia na coluna A a partir do topo.
-  // Ignora qualquer "lixo" residual (checkboxes, espacos invisiveis,
-  // resultados de formula, etc) que possam estar mais pra baixo.
+  // Acha a ultima linha que tem Nome (A) E Telefone (B) preenchidos.
+  // Lead real sempre tem os dois. Lixo isolado em outras linhas (so
+  // checkbox, so um nome solto, so formato residual) e ignorado.
+  // Grava na linha logo abaixo dessa.
   const limite = 5000;
   const ultimaParaLer = Math.min(limite, Math.max(sheet.getMaxRows(), 1));
-  const valores = sheet
-    .getRange(1, 1, ultimaParaLer, 1)
-    .getValues();
-  // Pula linha 1 (cabecalho).
+  const valores = sheet.getRange(1, 1, ultimaParaLer, 2).getValues();
+  let ultimaComLead = 1; // 1 = cabecalho
   for (let i = 1; i < valores.length; i++) {
-    if (String(valores[i][0]).trim() === "") {
-      return i + 1; // i e zero-based, linhas sao 1-based
+    const a = String(valores[i][0] ?? "").trim();
+    const b = String(valores[i][1] ?? "").trim();
+    if (a !== "" && b !== "") {
+      ultimaComLead = i + 1; // 1-based
     }
   }
-  return ultimaParaLer + 1;
+  return ultimaComLead + 1;
 }
 
 function jsonOut(obj) {
