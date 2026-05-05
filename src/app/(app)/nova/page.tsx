@@ -4,6 +4,8 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSimulacao } from "@/lib/storage";
+import { useUsuario } from "@/components/UsuarioProvider";
+import { isAdmin } from "@/lib/admin";
 
 export default function NovaChooserWrapper() {
   return (
@@ -16,7 +18,9 @@ export default function NovaChooserWrapper() {
 function NovaChooser() {
   const router = useRouter();
   const params = useSearchParams();
+  const usuario = useUsuario();
   const idParam = params.get("id");
+  const ehAdmin = isAdmin(usuario);
   const [redirecionando, setRedirecionando] = useState(!!idParam);
 
   useEffect(() => {
@@ -35,6 +39,17 @@ function NovaChooser() {
       ativo = false;
     };
   }, [idParam, router]);
+
+  // Cria ainda nao validada para usuarios comuns: pula o chooser
+  // e vai direto pra recria/engorda.
+  useEffect(() => {
+    if (idParam) return;
+    if (usuario === null) return; // ainda carregando
+    if (!ehAdmin) {
+      router.replace("/nova/recria-engorda");
+      setRedirecionando(true);
+    }
+  }, [idParam, usuario, ehAdmin, router]);
 
   if (redirecionando) {
     return (

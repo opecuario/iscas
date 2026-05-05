@@ -16,6 +16,7 @@ import { calcularCria } from "@/lib/calculationsCria";
 import { fmtBRL, fmtInt, fmtPct } from "@/lib/format";
 import { useUsuario } from "@/components/UsuarioProvider";
 import { useToast } from "@/components/ToastProvider";
+import { isAdmin } from "@/lib/admin";
 import { varianteEfetiva } from "@/lib/variantes";
 import type { InputsBase } from "@/lib/types";
 
@@ -34,23 +35,29 @@ export default function Dashboard() {
   const usuario = useUsuario();
   const router = useRouter();
   const toast = useToast();
-  const [simulacoes, setSimulacoes] = useState<SimulacaoSalva[]>([]);
+  const [todasSimulacoes, setTodasSimulacoes] = useState<SimulacaoSalva[]>([]);
+  const ehAdmin = isAdmin(usuario);
 
   useEffect(() => {
     let ativo = true;
     listSimulacoesDoUsuarioLogado().then((sims) => {
-      if (ativo) setSimulacoes(sims);
+      if (ativo) setTodasSimulacoes(sims);
     });
     return () => {
       ativo = false;
     };
   }, []);
 
+  // Cria nao validada para usuarios comuns: filtra da lista visivel.
+  const simulacoes = ehAdmin
+    ? todasSimulacoes
+    : todasSimulacoes.filter((s) => s.tipo !== "cria");
+
   async function excluir(id: string) {
     if (!confirm("Tem certeza que deseja excluir esta simulação?")) return;
     await deleteSimulacao(id);
     const sims = await listSimulacoesDoUsuarioLogado();
-    setSimulacoes(sims);
+    setTodasSimulacoes(sims);
     toast.sucesso("Simulação excluída.");
   }
 

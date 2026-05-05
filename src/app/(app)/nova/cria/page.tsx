@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import SimuladorCriaForm from "@/components/SimuladorCriaForm";
 import ResultadosCriaPainel from "@/components/ResultadosCriaPainel";
 import { useToast } from "@/components/ToastProvider";
+import { useUsuario } from "@/components/UsuarioProvider";
+import { isAdmin } from "@/lib/admin";
 import { calcularCria, inputsCriaPadrao } from "@/lib/calculationsCria";
 import {
   LIMITE_SIMULACOES,
@@ -31,6 +33,7 @@ function NovaCriaPage() {
   const router = useRouter();
   const toast = useToast();
   const params = useSearchParams();
+  const usuario = useUsuario();
   const idParam = params.get("id");
 
   const [id, setId] = useState<string | null>(idParam);
@@ -43,6 +46,15 @@ function NovaCriaPage() {
   const [autoSalvando, setAutoSalvando] = useState(false);
   const [ultimoAutoSave, setUltimoAutoSave] = useState<string | null>(null);
   const nomeInputRef = useRef<HTMLInputElement>(null);
+
+  // Cria ainda nao validada para usuarios comuns. Bloqueia acesso direto
+  // a esta rota pra quem nao for admin.
+  useEffect(() => {
+    if (usuario === null) return; // ainda carregando
+    if (!isAdmin(usuario)) {
+      router.replace("/");
+    }
+  }, [usuario, router]);
 
   useEffect(() => {
     let ativo = true;

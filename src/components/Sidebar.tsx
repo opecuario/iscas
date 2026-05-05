@@ -38,17 +38,23 @@ export default function Sidebar() {
   const toast = useToast();
   const router = useRouter();
   const pathname = usePathname();
-  const [simulacoes, setSimulacoes] = useState<SimulacaoSalva[]>([]);
+  const [todasSimulacoes, setTodasSimulacoes] = useState<SimulacaoSalva[]>([]);
+  const ehAdmin = isAdmin(usuario);
 
   useEffect(() => {
     let ativo = true;
     listSimulacoesDoUsuarioLogado().then((sims) => {
-      if (ativo) setSimulacoes(sims);
+      if (ativo) setTodasSimulacoes(sims);
     });
     return () => {
       ativo = false;
     };
   }, [pathname]);
+
+  // Cria nao validada para usuarios comuns: esconde da sidebar.
+  const simulacoes = ehAdmin
+    ? todasSimulacoes
+    : todasSimulacoes.filter((s) => s.tipo !== "cria");
 
   const ilimitadas = !!usuario?.simulacoesIlimitadas;
   const cheio = !ilimitadas && simulacoes.length >= LIMITE_SIMULACOES;
